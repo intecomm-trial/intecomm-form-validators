@@ -1,10 +1,13 @@
+from django.core.exceptions import ObjectDoesNotExist
 from edc_constants.constants import COMPLETE, YES
 from edc_form_validators import FormValidator
+from edc_screening.utils import get_subject_screening_model_cls
 
 from .patient_group_form_validator import INVALID_RANDOMIZE
 
 INVALID_APPOINTMENT_DATE = "INVALID_APPOINTMENT_DATE"
 INVALID_GROUP = "INVALID_GROUP"
+INVALID_CHANGE_ALREADY_SCREENED = "INVALID_CHANGE_ALREADY_SCREENED"
 
 
 class PatientLogFormValidator(FormValidator):
@@ -13,6 +16,33 @@ class PatientLogFormValidator(FormValidator):
             self.raise_validation_error(
                 "A patient in a randomized group may not be changed", INVALID_RANDOMIZE
             )
+
+        try:
+            subject_screening = get_subject_screening_model_cls().objects.get(
+                screening_identifier=self.instance.screening_identifier
+            )
+        except ObjectDoesNotExist:
+            pass
+        else:
+            if subject_screening.initials != self.cleaned_data.get("initials"):
+                self.raise_validation_error(
+                    "Patient has already screened. Initials may not change",
+                    INVALID_CHANGE_ALREADY_SCREENED,
+                )
+            if subject_screening.hospital_identifier != self.cleaned_data.get("hf_identifier"):
+                self.raise_validation_error(
+                    "Patient has already screened. Heath Facility Identifier may not change",
+                    INVALID_CHANGE_ALREADY_SCREENED,
+                )
+            if (
+                self.cleaned_data.get("site")
+                and subject_screening.site.id != self.cleaned_data.get("site").id
+            ):
+                self.raise_validation_error(
+                    "Patient has already screened. Site / Health Facility may not change",
+                    INVALID_CHANGE_ALREADY_SCREENED,
+                )
+
         if (
             self.cleaned_data.get("last_routine_appt_date")
             and self.cleaned_data.get("report_datetime")
