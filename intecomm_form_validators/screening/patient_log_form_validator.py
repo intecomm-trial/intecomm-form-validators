@@ -2,6 +2,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from edc_constants.constants import COMPLETE, YES
 from edc_form_validators import FormValidator
 from edc_screening.utils import get_subject_screening_model_cls
+from intecomm_screening.models import SubjectScreening
 
 from .patient_group_form_validator import INVALID_RANDOMIZE
 
@@ -24,6 +25,11 @@ class PatientLogFormValidator(FormValidator):
         except ObjectDoesNotExist:
             pass
         else:
+            if subject_screening.gender != self.cleaned_data.get("gender"):
+                self.raise_validation_error(
+                    "Patient has already screened. Gender may not change",
+                    INVALID_CHANGE_ALREADY_SCREENED,
+                )
             if subject_screening.initials != self.cleaned_data.get("initials"):
                 self.raise_validation_error(
                     "Patient has already screened. Initials may not change",
