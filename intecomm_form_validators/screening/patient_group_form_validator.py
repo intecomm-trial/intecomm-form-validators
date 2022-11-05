@@ -1,25 +1,15 @@
-from typing import Tuple
+from decimal import Decimal
 
 from django.urls import reverse
 from django.utils.html import format_html
 from edc_constants.constants import COMPLETE, DM, HIV, HTN, YES
 from edc_form_validators import FormValidator
+from intecomm_screening.utils import calculate_ratio
 
 INVALID_PATIENT_COUNT = "INVALID_PATIENT_COUNT"
 INVALID_RANDOMIZE = "INVALID_RANDOMIZE"
 INVALID_PATIENT = "INVALID_PATIENT"
 INVALID_CONDITION_RATIO = "INVALID_CONDITION_RATIO"
-
-
-def calculate_ratio(patients) -> Tuple[float, float]:
-    ncd = 0.0
-    hiv = 0.0
-    for patient_log in patients:
-        if patient_log.conditions.filter(name__in=[DM, HTN]).exists():
-            ncd += 1.0
-        if patient_log.conditions.filter(name__in=[HIV]).exists():
-            hiv += 1.0
-    return ncd, hiv
 
 
 class PatientGroupFormValidator(FormValidator):
@@ -76,17 +66,22 @@ class PatientGroupFormValidator(FormValidator):
                     f'See <a href="{patient_log_url}">{patient_log}</a>'
                 )
                 self.raise_validation_error(errmsg, INVALID_PATIENT)
-        ncd, hiv = calculate_ratio(self.cleaned_data.get("patients"))
-        ratio = ncd / hiv
-        group_name = self.cleaned_data.get("name")
-        if not (2.0 <= ratio <= 2.7):
-            url = reverse("intecomm_screening_admin:intecomm_screening_patientlog_changelist")
-            url = f"{url}?q={group_name}"
-            errmsg = format_html(
-                f"Ratio NDC:HIV not met. Expected at least 2:1. Got {int(ncd)}:{int(hiv)}. "
-                f'See group <a href="{url}">{group_name}</a>',
-            )
-            self.raise_validation_error(errmsg, INVALID_CONDITION_RATIO)
+        self.validate_patient_group_ratio()
+
+    def validate_patient_group_ratio(self):
+        if self.cleaned_data.get("status") and self.cleaned_data.get("status") == COMPLETE:
+            ncd, hiv, ratio = calculate_ratio(self.cleaned_data.get("patients"))
+            if not (Decimal("2.00") <= ratio <= Decimal("2.70")):
+                group_name = self.cleaned_data.get("name")
+                url = reverse(
+                    "intecomm_screening_admin:intecomm_screening_patientlog_changelist"
+                )
+                url = f"{url}?q={group_name}"
+                errmsg = format_html(
+                    f"Ratio NDC:HIV not met. Expected at least 2:1. Got {int(ncd)}:{int(hiv)}. "
+                    f'See group <a href="{url}">{group_name}</a>',
+                )
+                self.raise_validation_error(errmsg, INVALID_CONDITION_RATIO)
 
     def block_changes_if_randomized(self):
         if self.instance.randomized:
