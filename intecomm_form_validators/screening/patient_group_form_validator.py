@@ -48,6 +48,10 @@ class PatientGroupFormValidator(FormValidator):
                 "intecomm_screening_admin:intecomm_screening_patientlog_change",
                 args=(patient_log.id,),
             )
+            patient_log_changelist_url = reverse(
+                "intecomm_screening_admin:intecomm_screening_patientlog_changelist",
+            )
+            patient_log_changelist_url = f"{patient_log_changelist_url}?q={patient_log.id}"
             if patient_log.stable != YES:
                 errmsg = format_html(
                     "Patient is not known to be stable and in-care. "
@@ -57,13 +61,13 @@ class PatientGroupFormValidator(FormValidator):
             if not patient_log.screening_identifier:
                 errmsg = format_html(
                     "Patient has not been screened for eligibility. "
-                    f'See <a href="{patient_log_url}">{patient_log}</a>'
+                    f'See <a href="{patient_log_changelist_url}">{patient_log}</a>'
                 )
                 self.raise_validation_error(errmsg, INVALID_PATIENT)
             if not patient_log.subject_identifier:
                 errmsg = format_html(
                     "Patient has not consented. "
-                    f'See <a href="{patient_log_url}">{patient_log}</a>'
+                    f'See <a href="{patient_log_changelist_url}">{patient_log}</a>'
                 )
                 self.raise_validation_error(errmsg, INVALID_PATIENT)
         self.validate_patient_group_ratio()
