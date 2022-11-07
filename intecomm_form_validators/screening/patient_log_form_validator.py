@@ -2,7 +2,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from edc_constants.constants import COMPLETE, YES
 from edc_form_validators import FormValidator
 from edc_screening.utils import get_subject_screening_model_cls
-from intecomm_screening.models import SubjectScreening
 
 from .patient_group_form_validator import INVALID_RANDOMIZE
 
