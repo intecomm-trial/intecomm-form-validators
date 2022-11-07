@@ -24,6 +24,11 @@ class PatientLogFormValidator(FormValidator):
         except ObjectDoesNotExist:
             pass
         else:
+            if subject_screening.gender != self.cleaned_data.get("gender"):
+                self.raise_validation_error(
+                    "Patient has already screened. Gender may not change",
+                    INVALID_CHANGE_ALREADY_SCREENED,
+                )
             if subject_screening.initials != self.cleaned_data.get("initials"):
                 self.raise_validation_error(
                     "Patient has already screened. Initials may not change",
