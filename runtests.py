@@ -11,12 +11,12 @@ from django.test.runner import DiscoverRunner
 app_name = "intecomm_form_validators"
 base_dir = Path(__file__).resolve().parent.parent
 
-DEFAULT_SETTINGS = dict(
+DEFAULT_SETTINGS = dict(  # nosec B106
     BASE_DIR=Path(__file__).resolve().parent.parent,
-    SECRET_KEY="django-insecure-37g_by$&j(g8r9uqn%*@i3!4y6_rxlyf57itfp+)_)z2(6!=$l",
+    SECRET_KEY="django-insecure",  # nosec B106
     DEBUG=True,
     SUBJECT_CONSENT_MODEL=None,
-    # SUBJECT_SCREENING_MODEL=None,
+    SUBJECT_SCREENING_MODEL=None,
     ALLOWED_HOSTS=[],
     INSTALLED_APPS=[
         "django.contrib.admin",

@@ -70,7 +70,7 @@ class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormVali
 
     def validate_condition(self, name, field):
         conditions = self.patient_log.conditions
-        if not conditions:
+        if not self.patient_log.conditions:
             self.raise_validation_error(
                 "No conditions (HIV/DM/HTN) have been indicated for this patient. See "
                 "the Patient Log",
