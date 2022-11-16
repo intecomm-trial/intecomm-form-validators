@@ -2,9 +2,10 @@ from decimal import Decimal
 
 from django.urls import reverse
 from django.utils.html import format_html
-from edc_constants.constants import COMPLETE, DM, HIV, HTN, YES
+from edc_constants.constants import COMPLETE, YES
 from edc_form_validators import FormValidator
-from intecomm_screening.utils import calculate_ratio
+
+from ..utils import calculate_ratio
 
 INVALID_PATIENT_COUNT = "INVALID_PATIENT_COUNT"
 INVALID_RANDOMIZE = "INVALID_RANDOMIZE"
@@ -13,22 +14,15 @@ INVALID_CONDITION_RATIO = "INVALID_CONDITION_RATIO"
 
 
 class PatientGroupFormValidator(FormValidator):
+
+    group_count_min = 14
+
     def clean(self):
 
         self.block_changes_if_randomized()
+
         self.confirm_group_size_or_raise()
 
-        # confirm complete cannot be changed if randomized
-        if self.cleaned_data.get("status") != COMPLETE and self.instance.randomized:
-            self.raise_validation_error(
-                {"status": "Invalid. Group has already been randomized"}, INVALID_RANDOMIZE
-            )
-        if self.cleaned_data.get("randomize") != YES and self.instance.randomized:
-            self.raise_validation_error(
-                {"randomize": "Invalid. Group has already been randomized"}, INVALID_RANDOMIZE
-            )
-
-        # confirm complete before randomize == YES
         if (
             self.cleaned_data.get("status") != COMPLETE
             and self.cleaned_data.get("randomize") == YES
@@ -41,49 +35,53 @@ class PatientGroupFormValidator(FormValidator):
             self.review_patients()
 
     def review_patients(self):
-        ncd = 0.0
-        hiv = 0.0
         for patient_log in self.cleaned_data.get("patients"):
-            patient_log_url = reverse(
-                "intecomm_screening_admin:intecomm_screening_patientlog_change",
-                args=(patient_log.id,),
-            )
-            patient_log_changelist_url = reverse(
-                "intecomm_screening_admin:intecomm_screening_patientlog_changelist",
-            )
-            patient_log_changelist_url = f"{patient_log_changelist_url}?q={patient_log.id}"
             if patient_log.stable != YES:
                 errmsg = format_html(
                     "Patient is not known to be stable and in-care. "
-                    f'See <a href="{patient_log_url}">{patient_log}</a>'
+                    f'See <a href="{self.patient_log_url(patient_log)}">{patient_log}</a>'
                 )
                 self.raise_validation_error(errmsg, INVALID_PATIENT)
             if not patient_log.screening_identifier:
                 errmsg = format_html(
                     "Patient has not been screened for eligibility. "
-                    f'See <a href="{patient_log_changelist_url}">{patient_log}</a>'
+                    f'See <a href="{self.patient_log_changelist_url(patient_log.id)}">'
+                    f"{patient_log}</a>"
                 )
                 self.raise_validation_error(errmsg, INVALID_PATIENT)
             if not patient_log.subject_identifier:
                 errmsg = format_html(
                     "Patient has not consented. "
-                    f'See <a href="{patient_log_changelist_url}">{patient_log}</a>'
+                    f'See <a href="{self.patient_log_changelist_url(patient_log.id)}">'
+                    f"{patient_log}</a>"
                 )
                 self.raise_validation_error(errmsg, INVALID_PATIENT)
         self.validate_patient_group_ratio()
+
+    @staticmethod
+    def patient_log_url(patient_log) -> str:
+        return reverse(
+            "intecomm_screening_admin:intecomm_screening_patientlog_change",
+            args=(patient_log.id,),
+        )
+
+    @staticmethod
+    def patient_log_changelist_url(search_term) -> str:
+        url = reverse(
+            "intecomm_screening_admin:intecomm_screening_patientlog_changelist",
+        )
+        return f"{url}?q={search_term}"
 
     def validate_patient_group_ratio(self):
         if self.cleaned_data.get("status") and self.cleaned_data.get("status") == COMPLETE:
             ncd, hiv, ratio = calculate_ratio(self.cleaned_data.get("patients"))
             if not (Decimal("2.00") <= ratio <= Decimal("2.70")):
                 group_name = self.cleaned_data.get("name")
-                url = reverse(
-                    "intecomm_screening_admin:intecomm_screening_patientlog_changelist"
-                )
-                url = f"{url}?q={group_name}"
                 errmsg = format_html(
-                    f"Ratio NDC:HIV not met. Expected at least 2:1. Got {int(ncd)}:{int(hiv)}. "
-                    f'See group <a href="{url}">{group_name}</a>',
+                    "Ratio NDC:HIV not met. Expected at least 2:1. "
+                    f"Got {int(ncd)}:{int(hiv)}. "
+                    f'See group <a href="{self.patient_log_changelist_url(group_name)}">'
+                    f"{group_name}</a>",
                 )
                 self.raise_validation_error(errmsg, INVALID_CONDITION_RATIO)
 
@@ -94,19 +92,15 @@ class PatientGroupFormValidator(FormValidator):
             )
 
     def confirm_group_size_or_raise(self):
-        """Confirm at least 8 if complete."""
+        """Confirm at least 14 if complete."""
         if (
             self.cleaned_data.get("status") == COMPLETE
-            and self.cleaned_data.get("patients").count() < 8
+            and self.cleaned_data.get("patients").count() < self.group_count_min
         ):
             self.raise_validation_error(
-                {"status": "Invalid. Must have at least 8 patients"}, INVALID_PATIENT_COUNT
+                {
+                    "status": f"Invalid. Must have at least { self.group_count_min} patients. "
+                    f"Got {self.cleaned_data.get('patients').count()}."
+                },
+                INVALID_PATIENT_COUNT,
             )
-
-    def check_ratio_or_raise(self, patient_log, ncd, hiv):
-        # check ratio
-        if patient_log.conditions.filter(name__in=[DM, HTN]).exists():
-            ncd += 1.0
-        if patient_log.conditions.filter(name__in=[HIV]).exists():
-            hiv += 1.0
-        return ncd, hiv

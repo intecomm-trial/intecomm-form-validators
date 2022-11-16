@@ -11,42 +11,49 @@ INVALID_CHANGE_ALREADY_SCREENED = "INVALID_CHANGE_ALREADY_SCREENED"
 
 
 class PatientLogFormValidator(FormValidator):
+    def __init__(self, subject_screening=None, **kwargs) -> None:
+        self._subject_screening = subject_screening
+        super().__init__(**kwargs)
+
     def clean(self):
         if self.instance.patient_group and self.instance.patient_group.randomized:
             self.raise_validation_error(
                 "A patient in a randomized group may not be changed", INVALID_RANDOMIZE
             )
 
-        try:
-            subject_screening = get_subject_screening_model_cls().objects.get(
-                screening_identifier=self.instance.screening_identifier
+        if self.subject_screening and self.subject_screening.gender != self.cleaned_data.get(
+            "gender"
+        ):
+            self.raise_validation_error(
+                "Patient has already screened. Gender may not change",
+                INVALID_CHANGE_ALREADY_SCREENED,
             )
-        except ObjectDoesNotExist:
-            pass
-        else:
-            if subject_screening.gender != self.cleaned_data.get("gender"):
-                self.raise_validation_error(
-                    "Patient has already screened. Gender may not change",
-                    INVALID_CHANGE_ALREADY_SCREENED,
-                )
-            if subject_screening.initials != self.cleaned_data.get("initials"):
-                self.raise_validation_error(
-                    "Patient has already screened. Initials may not change",
-                    INVALID_CHANGE_ALREADY_SCREENED,
-                )
-            if subject_screening.hospital_identifier != self.cleaned_data.get("hf_identifier"):
-                self.raise_validation_error(
-                    "Patient has already screened. Heath Facility Identifier may not change",
-                    INVALID_CHANGE_ALREADY_SCREENED,
-                )
-            if (
-                self.cleaned_data.get("site")
-                and subject_screening.site.id != self.cleaned_data.get("site").id
-            ):
-                self.raise_validation_error(
-                    "Patient has already screened. Site / Health Facility may not change",
-                    INVALID_CHANGE_ALREADY_SCREENED,
-                )
+        if (
+            self.subject_screening
+            and self.subject_screening.initials != self.cleaned_data.get("initials")
+        ):
+            self.raise_validation_error(
+                "Patient has already screened. Initials may not change",
+                INVALID_CHANGE_ALREADY_SCREENED,
+            )
+        if (
+            self.subject_screening
+            and self.subject_screening.hospital_identifier
+            != self.cleaned_data.get("hf_identifier")
+        ):
+            self.raise_validation_error(
+                "Patient has already screened. Heath Facility Identifier may not change",
+                INVALID_CHANGE_ALREADY_SCREENED,
+            )
+        if (
+            self.subject_screening
+            and self.cleaned_data.get("site")
+            and self.subject_screening.site.id != self.cleaned_data.get("site").id
+        ):
+            self.raise_validation_error(
+                "Patient has already screened. Site / Health Facility may not change",
+                INVALID_CHANGE_ALREADY_SCREENED,
+            )
 
         if (
             self.cleaned_data.get("last_routine_appt_date")
@@ -73,10 +80,18 @@ class PatientLogFormValidator(FormValidator):
         self.required_if(
             YES, field="second_health_talk", field_required="second_health_talk_date"
         )
+        self.validate_group_changes()
 
+    def validate_group_changes(self):
         if from_group := self.instance.patient_group:
-            if to_group := self.cleaned_data.get("patient_group"):
-                if from_group.id == to_group.id:
+            to_group = self.cleaned_data.get("patient_group")
+            if not to_group:
+                if from_group.status == COMPLETE:
+                    self.raise_validation_error(
+                        "Cannot remove from current group. Group is complete.", INVALID_GROUP
+                    )
+            elif to_group:
+                if from_group.name == to_group.name:
                     pass
                 elif from_group.status == COMPLETE:
                     self.raise_validation_error(
@@ -86,3 +101,14 @@ class PatientLogFormValidator(FormValidator):
                     self.raise_validation_error(
                         "Cannot add to group. Group is complete.", INVALID_GROUP
                     )
+
+    @property
+    def subject_screening(self):
+        if not self._subject_screening:
+            try:
+                self._subject_screening = get_subject_screening_model_cls().objects.get(
+                    screening_identifier=self.instance.screening_identifier
+                )
+            except ObjectDoesNotExist:
+                self._subject_screening = None
+        return self._subject_screening
