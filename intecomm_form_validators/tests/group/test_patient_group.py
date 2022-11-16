@@ -4,7 +4,7 @@ from django_mock_queries.query import MockModel, MockSet
 from edc_constants.constants import COMPLETE, DM, HIV, HTN, NO, YES
 
 from intecomm_form_validators.constants import RECRUITING
-from intecomm_form_validators.screening import PatientGroupFormValidator as Base
+from intecomm_form_validators.group import PatientGroupFormValidator as Base
 
 
 class SubjectScreeningMockModel(MockModel):
