@@ -1,6 +1,10 @@
+from dateutil.relativedelta import relativedelta
 from edc_constants.constants import DM, HIV, HTN, MALE, NO, YES
 from edc_form_validators import INVALID_ERROR, FormValidator
+from edc_model import InvalidFormat, duration_to_date
 from edc_screening.form_validator_mixins import SubjectScreeningFormValidatorMixin
+
+INVALID_DURATION_IN_CARE = "invalid_duration_in_care"
 
 
 class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormValidator):
@@ -21,6 +25,7 @@ class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormVali
             )
 
         self.required_if(YES, field="in_care_6m", field_required="in_care_duration")
+        self.duration_in_care_is_6m_or_more_or_raise()
 
         self.validate_hiv_section()
         self.validate_dm_section()
@@ -48,10 +53,26 @@ class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormVali
 
         pass
 
+    def duration_in_care_is_6m_or_more_or_raise(self, fieldname: str = None) -> None:
+        fieldname = fieldname or "in_care_duration"
+        in_care_duration = self.cleaned_data.get(fieldname)
+        report_datetime = self.cleaned_data.get("report_datetime")
+        if report_datetime and in_care_duration:
+            try:
+                dt = duration_to_date(in_care_duration, report_datetime)
+            except InvalidFormat as e:
+                self.raise_validation_error({fieldname: f"Invalid format. {e}"}, INVALID_ERROR)
+            if dt + relativedelta(months=6) > report_datetime:
+                self.raise_validation_error(
+                    {fieldname: "Expected at least 6m from the report date"},
+                    INVALID_DURATION_IN_CARE,
+                )
+
     def validate_hiv_section(self):
         self.validate_condition(HIV, "hiv_dx")
         self.applicable_if(YES, field="hiv_dx", field_applicable="hiv_dx_6m")
         self.required_if(YES, field="hiv_dx_6m", field_required="hiv_dx_ago")
+        self.duration_in_care_is_6m_or_more_or_raise("hiv_dx_ago")
         self.applicable_if(YES, field="hiv_dx", field_applicable="art_unchanged_3m")
         self.applicable_if(YES, field="hiv_dx", field_applicable="art_stable")
         self.applicable_if(YES, field="hiv_dx", field_applicable="art_adherent")
@@ -60,12 +81,14 @@ class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormVali
         self.validate_condition(DM, "dm_dx")
         self.applicable_if(YES, field="dm_dx", field_applicable="dm_dx_6m")
         self.required_if(YES, field="dm_dx_6m", field_required="dm_dx_ago")
+        self.duration_in_care_is_6m_or_more_or_raise("dm_dx_ago")
         self.applicable_if(YES, field="dm_dx", field_applicable="dm_complications")
 
     def validate_htn_section(self):
         self.validate_condition(HTN, "htn_dx")
         self.applicable_if(YES, field="htn_dx", field_applicable="htn_dx_6m")
         self.required_if(YES, field="htn_dx_6m", field_required="htn_dx_ago")
+        self.duration_in_care_is_6m_or_more_or_raise("htn_dx_ago")
         self.applicable_if(YES, field="htn_dx", field_applicable="htn_complications")
 
     def validate_condition(self, name, field):
