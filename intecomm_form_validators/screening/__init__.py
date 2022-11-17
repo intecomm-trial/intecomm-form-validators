@@ -1,3 +1,4 @@
+from .health_facility_form_validator import HealthFacilityFormValidator
 from .health_talk_log_form_validator import HealthTalkLogFormValidator
 from .patient_call_form_validator import PatientCallFormValidator
 from .patient_log_form_validator import (

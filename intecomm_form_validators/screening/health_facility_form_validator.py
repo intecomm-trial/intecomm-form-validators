@@ -1,5 +1,5 @@
 from edc_form_validators import FormValidator
 
 
-class HealthTalkLogFormValidator(FormValidator):
+class HealthFacilityFormValidator(FormValidator):
     pass
