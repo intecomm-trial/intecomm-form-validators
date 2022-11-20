@@ -2,6 +2,7 @@ from django import forms
 from django.test import TestCase
 from django_mock_queries.query import MockModel, MockSet
 from edc_constants.constants import DM, FEMALE, MALE, NO, YES
+from edc_utils import get_utcnow
 
 from intecomm_form_validators.screening import SubjectScreeningFormValidator as Base
 
@@ -27,7 +28,7 @@ class PatientLogMockModel(MockModel):
         return "MALE" if self.gender == MALE else "FEMALE"
 
 
-class SubjectSAcreeningTests(TestCase):
+class SubjectScreeningTests(TestCase):
     @staticmethod
     def get_form_validator_cls(subject_screening=None):
         class SubjectScreeningFormValidator(Base):
@@ -91,6 +92,52 @@ class SubjectSAcreeningTests(TestCase):
             "|".join(cm.exception.messages),
         )
 
+    def test_in_care_duration(self):
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data={
+                "report_datetime": get_utcnow(),
+                "gender": MALE,
+                "patient_log": self.patient_log(gender=MALE),
+                "consent_ability": YES,
+                "in_care_6m": YES,
+                "in_care_duration": "1d",
+                "hiv_dx": NO,
+                "dm_dx": YES,
+                "htn_dx": NO,
+            },
+            instance=SubjectScreeningMockModel(),
+            model=SubjectScreeningMockModel,
+        )
+        with self.assertRaises(forms.ValidationError) as cm:
+            form_validator.validate()
+        self.assertIn(
+            "Expected at least 6m from the report date",
+            "|".join(cm.exception.messages),
+        )
+
+    def test_in_care_duration_format(self):
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data={
+                "report_datetime": get_utcnow(),
+                "gender": MALE,
+                "patient_log": self.patient_log(gender=MALE),
+                "consent_ability": YES,
+                "in_care_6m": YES,
+                "in_care_duration": "ERIK",
+                "hiv_dx": NO,
+                "dm_dx": YES,
+                "htn_dx": NO,
+            },
+            instance=SubjectScreeningMockModel(),
+            model=SubjectScreeningMockModel,
+        )
+        with self.assertRaises(forms.ValidationError) as cm:
+            form_validator.validate()
+        self.assertIn(
+            "Invalid format",
+            "|".join(cm.exception.messages),
+        )
+
     def test_no_conditions_in_patient_log(self):
         form_validator = self.get_form_validator_cls()(
             cleaned_data={
@@ -151,6 +198,55 @@ class SubjectSAcreeningTests(TestCase):
         except forms.ValidationError:
             self.fail("ValidationError unexpectedly raised")
 
+    def test_conditions_durations(self):
+        cleaned_data = {
+            "report_datetime": get_utcnow(),
+            "gender": MALE,
+            "patient_log": self.patient_log(gender=MALE),
+            "consent_ability": YES,
+            "in_care_6m": YES,
+            "in_care_duration": "5y",
+            "hiv_dx": NO,
+            "dm_dx": YES,
+            "htn_dx": NO,
+            "dm_dx_ago": "5m",
+        }
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=SubjectScreeningMockModel(),
+            model=SubjectScreeningMockModel,
+        )
+        with self.assertRaises(forms.ValidationError) as cm:
+            form_validator.validate()
+        self.assertIn(
+            "Expected at least 6m from the report date",
+            "|".join(cm.exception.messages),
+        )
+
+        cleaned_data.update({"dm_dx_ago": "ERIK"})
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=SubjectScreeningMockModel(),
+            model=SubjectScreeningMockModel,
+        )
+        with self.assertRaises(forms.ValidationError) as cm:
+            form_validator.validate()
+        self.assertIn(
+            "Invalid format",
+            "|".join(cm.exception.messages),
+        )
+
+        cleaned_data.update({"dm_dx_ago": "6m"})
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=SubjectScreeningMockModel(),
+            model=SubjectScreeningMockModel,
+        )
+        try:
+            form_validator.validate()
+        except forms.ValidationError:
+            self.fail("ValidationError unexpectedly raised")
+
     def test_conditions_not_matching_patient_log2(self):
         form_validator = self.get_form_validator_cls()(
             cleaned_data={
@@ -170,3 +266,6 @@ class SubjectSAcreeningTests(TestCase):
             "Invalid. DM was indicated as a condition on the Patient Log",
             "|".join(cm.exception.messages),
         )
+
+    def test_eligibility(self):
+        pass
