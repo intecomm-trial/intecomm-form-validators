@@ -7,6 +7,7 @@ from .screening import (
     HealthFacilityFormValidator,
     HealthTalkLogFormValidator,
     PatientCallFormValidator,
+    PatientGroupScreeningFormValidator,
     PatientLogFormValidator,
     SubjectRefusalFormValidator,
     SubjectScreeningFormValidator,

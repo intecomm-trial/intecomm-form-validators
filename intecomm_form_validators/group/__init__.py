@@ -1,1 +1,1 @@
-from .patient_group_form_validator import INVALID_RANDOMIZE, PatientGroupFormValidator
+from .patient_group_form_validator import PatientGroupFormValidator

@@ -3,7 +3,7 @@ from edc_constants.constants import COMPLETE, YES
 from edc_form_validators import FormValidator
 from edc_screening.utils import get_subject_screening_model_cls
 
-from ..group import INVALID_RANDOMIZE
+from .patient_group_form_validator import INVALID_RANDOMIZE
 
 INVALID_APPOINTMENT_DATE = "INVALID_APPOINTMENT_DATE"
 INVALID_GROUP = "INVALID_GROUP"

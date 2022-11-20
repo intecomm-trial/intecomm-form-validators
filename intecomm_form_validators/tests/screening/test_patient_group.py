@@ -1,37 +1,20 @@
+from __future__ import annotations
+
 from django import forms
-from django.test import TestCase
-from django_mock_queries.query import MockModel, MockSet
-from edc_constants.constants import COMPLETE, DM, HIV, HTN, NO, YES
+from django.test import tag
+from django_mock_queries.query import MockSet
+from edc_constants.constants import COMPLETE, NO, YES
 
 from intecomm_form_validators.constants import RECRUITING
-from intecomm_form_validators.group import PatientGroupFormValidator as Base
+from intecomm_form_validators.screening import (
+    PatientGroupScreeningFormValidator as Base,
+)
+
+from ..mock_models import PatientGroupMockModel
+from ..test_case_mixin import TestCaseMixin
 
 
-class SubjectScreeningMockModel(MockModel):
-    def __init__(self, *args, **kwargs):
-        kwargs["mock_name"] = "SubjectScreening"
-        super().__init__(*args, **kwargs)
-
-
-class PatientGroupMockModel(MockModel):
-    def __init__(self, *args, **kwargs):
-        kwargs["mock_name"] = "PatientGroup"
-        super().__init__(*args, **kwargs)
-
-
-class PatientLogMockModel(MockModel):
-    def __init__(self, *args, **kwargs):
-        kwargs["mock_name"] = "PatientLog"
-        super().__init__(*args, **kwargs)
-
-
-class ConditionsMockModel(MockModel):
-    def __init__(self, *args, **kwargs):
-        kwargs["mock_name"] = "Conditions"
-        super().__init__(*args, **kwargs)
-
-
-class PatientGroupTests(TestCase):
+class PatientGroupTests(TestCaseMixin):
     @staticmethod
     def get_form_validator_cls(subject_screening=None):
         class PatientGroupFormValidator(Base):
@@ -39,48 +22,10 @@ class PatientGroupTests(TestCase):
             def subject_screening(self):
                 return subject_screening
 
-            @staticmethod
-            def patient_log_url(search_term) -> str:
-                return "patient_log_url"
-
-            @staticmethod
-            def patient_log_changelist_url(search_term) -> str:
-                return "patient_log_changelist_url"
-
         return PatientGroupFormValidator
 
-    @staticmethod
-    def get_mock_patients(
-        dm=None,
-        htn=None,
-        hiv=None,
-        stable=None,
-        screening_identifier=None,
-        subject_identifier=None,
-    ) -> list:
-        patients = []
-        for condition, count in {DM: dm or 0, HTN: htn or 0, HIV: hiv or 0}.items():
-            for i in range(0, count):
-                screening_identifier = f"SCRN{condition}{i}" if screening_identifier else None
-                subject_identifier = f"SUBJ{condition}{i}" if subject_identifier else None
-                patients.append(
-                    PatientLogMockModel(
-                        name=f"NAME{condition}{i}",
-                        stable=NO if stable is None else stable,
-                        screening_identifier=screening_identifier,
-                        subject_identifier=subject_identifier,
-                        conditions=MockSet(
-                            MockModel(
-                                mock_name="Conditions",
-                                name=condition,
-                            )
-                        ),
-                    )
-                )
-        return patients
-
     def test_raises_if_randomized(self):
-        patients = self.get_mock_patients(dm=10, hiv=4)
+        patients = self.get_mock_patients(ratio=[10, 0, 4])
         patient_group = PatientGroupMockModel(randomized=True, patients=MockSet(*patients))
         form_validator = self.get_form_validator_cls()(
             cleaned_data={}, instance=patient_group, model=PatientGroupMockModel
@@ -95,11 +40,13 @@ class PatientGroupTests(TestCase):
         except forms.ValidationError:
             self.fail("ValidationError unexpectedly raised")
 
-    def test_raises_if_not_complete(self):
-        patients = self.get_mock_patients(dm=10, hiv=4)
-        patient_group = PatientGroupMockModel(randomized=False, patients=MockSet(*patients))
+    def test_raises_if_status_not_complete(self):
+        patients = self.get_mock_patients(ratio=[10, 0, 4])
+        patient_group = PatientGroupMockModel()
         form_validator = self.get_form_validator_cls()(
-            cleaned_data={"status": RECRUITING, "randomize": YES},
+            cleaned_data=dict(
+                status=RECRUITING, randomize_now=YES, patients=MockSet(*patients)
+            ),
             instance=patient_group,
             model=PatientGroupMockModel,
         )
@@ -108,26 +55,56 @@ class PatientGroupTests(TestCase):
             form_validator.validate()
         self.assertIn("Invalid. Group is not complete", cm.exception.messages)
 
+    @tag("1")
     def test_group_size_not_ok(self):
-        patients = self.get_mock_patients(dm=10, hiv=2)
-        patient_group = PatientGroupMockModel(randomized=False, patients=MockSet(*patients))
+        patients = self.get_mock_patients(
+            ratio=[10, 0, 2], stable=True, screen=True, consent=True
+        )
+        patient_group = PatientGroupMockModel()
         form_validator = self.get_form_validator_cls()(
-            cleaned_data={"status": COMPLETE, "randomize": NO, "patients": MockSet(*patients)},
+            cleaned_data={
+                "status": COMPLETE,
+                "randomize_now": NO,
+                "patients": MockSet(*patients),
+            },
             instance=patient_group,
             model=PatientGroupMockModel,
         )
-        self.assertRaises(forms.ValidationError, form_validator.validate)
         with self.assertRaises(forms.ValidationError) as cm:
             form_validator.validate()
         self.assertIn(
-            "Invalid. Must have at least 14 patients. Got 12.", cm.exception.messages
+            "Patient group must have at least 14 patients. Got 12.", cm.exception.messages
         )
 
+    @tag("1")
     def test_group_size_ok(self):
-        patients = self.get_mock_patients(dm=10, hiv=4)
+        patients = self.get_mock_patients(
+            ratio=[10, 0, 4], stable=True, screen=True, consent=True
+        )
         patient_group = PatientGroupMockModel(randomized=False, patients=MockSet(*patients))
         form_validator = self.get_form_validator_cls()(
-            cleaned_data={"status": COMPLETE, "randomize": NO, "patients": MockSet(*patients)},
+            cleaned_data={
+                "status": COMPLETE,
+                "randomize_now": NO,
+                "patients": MockSet(*patients),
+            },
+            instance=patient_group,
+            model=PatientGroupMockModel,
+        )
+        try:
+            form_validator.validate()
+        except forms.ValidationError:
+            self.fail("ValidationError unexpectedly raised")
+
+    def test_group_size_overridden(self):
+        patients = self.get_mock_patients(ratio=[10, 0, 4])
+        patient_group = PatientGroupMockModel(randomized=False, patients=MockSet(*patients))
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data={
+                "status": COMPLETE,
+                "randomize_now": NO,
+                "patients": MockSet(*patients),
+            },
             instance=patient_group,
             model=PatientGroupMockModel,
         )
@@ -139,7 +116,7 @@ class PatientGroupTests(TestCase):
         )
 
     def test_group_size_too_small(self):
-        patients = self.get_mock_patients(dm=10, hiv=3)
+        patients = self.get_mock_patients(ratio=[10, 0, 3])
         form_validator = self.get_form_validator_cls()(
             cleaned_data=dict(patients=MockSet(*patients), status=COMPLETE),
             instance=PatientGroupMockModel(randomized=False),
@@ -147,11 +124,16 @@ class PatientGroupTests(TestCase):
         )
         self.assertRaises(forms.ValidationError, form_validator.validate)
 
+    @tag("1")
     def test_review_patients_in_group_none_stable(self):
-        patients = self.get_mock_patients(dm=10, hiv=4, stable=NO)
+        patients = self.get_mock_patients(ratio=[10, 0, 4], stable=False)
         patient_group = PatientGroupMockModel(randomized=False, patients=MockSet(*patients))
         form_validator = self.get_form_validator_cls()(
-            cleaned_data={"status": COMPLETE, "randomize": NO, "patients": MockSet(*patients)},
+            cleaned_data={
+                "status": COMPLETE,
+                "randomize_now": NO,
+                "patients": MockSet(*patients),
+            },
             instance=patient_group,
             model=PatientGroupMockModel,
         )
@@ -162,24 +144,32 @@ class PatientGroupTests(TestCase):
         )
 
     def test_review_patients_in_group_all_stable(self):
-        patients = self.get_mock_patients(dm=10, hiv=4, stable=YES)
+        patients = self.get_mock_patients(ratio=[10, 0, 4], stable=YES)
         patient_group = PatientGroupMockModel(randomized=False, patients=MockSet(*patients))
         form_validator = self.get_form_validator_cls()(
-            cleaned_data={"status": COMPLETE, "randomize": NO, "patients": MockSet(*patients)},
+            cleaned_data={
+                "status": COMPLETE,
+                "randomize_now": NO,
+                "patients": MockSet(*patients),
+            },
             instance=patient_group,
             model=PatientGroupMockModel,
         )
         with self.assertRaises(forms.ValidationError) as cm:
             form_validator.validate()
         self.assertIn(
-            "Patient has not been screened for eligibility", "|".join(cm.exception.messages)
+            "Patient has not screened for eligibility", "|".join(cm.exception.messages)
         )
 
     def test_review_patients_in_group_all_screened(self):
-        patients = self.get_mock_patients(dm=10, hiv=4, stable=YES, screening_identifier=True)
-        patient_group = PatientGroupMockModel(randomized=False, patients=MockSet(*patients))
+        patients = self.get_mock_patients(ratio=[10, 0, 4], stable=YES, screen=True)
+        patient_group = PatientGroupMockModel()
         form_validator = self.get_form_validator_cls()(
-            cleaned_data={"status": COMPLETE, "randomize": NO, "patients": MockSet(*patients)},
+            cleaned_data={
+                "status": COMPLETE,
+                "randomize_now": NO,
+                "patients": MockSet(*patients),
+            },
             instance=patient_group,
             model=PatientGroupMockModel,
         )
@@ -189,11 +179,15 @@ class PatientGroupTests(TestCase):
 
     def test_review_patients_in_group_all_consented(self):
         patients = self.get_mock_patients(
-            dm=10, hiv=4, stable=YES, screening_identifier=True, subject_identifier=True
+            ratio=[10, 0, 4], stable=YES, screen=True, consent=True
         )
         patient_group = PatientGroupMockModel(randomized=False, patients=MockSet(*patients))
         form_validator = self.get_form_validator_cls()(
-            cleaned_data={"status": COMPLETE, "randomize": NO, "patients": MockSet(*patients)},
+            cleaned_data={
+                "status": COMPLETE,
+                "randomize_now": NO,
+                "patients": MockSet(*patients),
+            },
             instance=patient_group,
             model=PatientGroupMockModel,
         )
@@ -204,11 +198,15 @@ class PatientGroupTests(TestCase):
 
     def test_ratio_ok(self):
         patients = self.get_mock_patients(
-            dm=10, hiv=4, stable=YES, screening_identifier=True, subject_identifier=True
+            ratio=[10, 0, 4], stable=YES, screen=True, consent=True
         )
         patient_group = PatientGroupMockModel(randomized=False, patients=MockSet(*patients))
         form_validator = self.get_form_validator_cls()(
-            cleaned_data={"status": COMPLETE, "randomize": NO, "patients": MockSet(*patients)},
+            cleaned_data={
+                "status": COMPLETE,
+                "randomize_now": NO,
+                "patients": MockSet(*patients),
+            },
             instance=patient_group,
             model=PatientGroupMockModel,
         )
@@ -218,18 +216,15 @@ class PatientGroupTests(TestCase):
             self.fail("ValidationError unexpectedly raised")
 
     def test_ratio_not_ok(self):
-        for dm, hiv in [(10, 6), (11, 3), (12, 7), (13, 7)]:
-            with self.subTest(dm=dm, hiv=hiv):
+        for ratio in [[10, 0, 6], [11, 0, 3], [12, 0, 7], [13, 0, 7]]:
+            with self.subTest(ratio=ratio):
                 patients = self.get_mock_patients(
-                    dm=dm,
-                    hiv=hiv,
+                    ratio=ratio,
                     stable=YES,
-                    screening_identifier=True,
-                    subject_identifier=True,
+                    screen=True,
+                    consent=True,
                 )
-                patient_group = PatientGroupMockModel(
-                    randomized=False, patients=MockSet(*patients)
-                )
+                patient_group = PatientGroupMockModel(patients=MockSet(*patients))
                 form_validator = self.get_form_validator_cls()(
                     cleaned_data={
                         "status": COMPLETE,
