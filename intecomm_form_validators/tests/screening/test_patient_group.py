@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from django import forms
-from django.test import tag
 from django_mock_queries.query import MockSet
 from edc_constants.constants import COMPLETE, NO, YES
 
@@ -55,7 +54,6 @@ class PatientGroupTests(TestCaseMixin):
             form_validator.validate()
         self.assertIn("Invalid. Group is not complete", cm.exception.messages)
 
-    @tag("1")
     def test_group_size_not_ok(self):
         patients = self.get_mock_patients(
             ratio=[10, 0, 2], stable=True, screen=True, consent=True
@@ -76,7 +74,6 @@ class PatientGroupTests(TestCaseMixin):
             "Patient group must have at least 14 patients. Got 12.", cm.exception.messages
         )
 
-    @tag("1")
     def test_group_size_ok(self):
         patients = self.get_mock_patients(
             ratio=[10, 0, 4], stable=True, screen=True, consent=True
@@ -124,7 +121,6 @@ class PatientGroupTests(TestCaseMixin):
         )
         self.assertRaises(forms.ValidationError, form_validator.validate)
 
-    @tag("1")
     def test_review_patients_in_group_none_stable(self):
         patients = self.get_mock_patients(ratio=[10, 0, 4], stable=False)
         patient_group = PatientGroupMockModel(randomized=False, patients=MockSet(*patients))

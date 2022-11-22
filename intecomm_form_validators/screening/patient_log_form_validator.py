@@ -1,5 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
-from edc_constants.constants import COMPLETE, YES
+from edc_constants.constants import YES
 from edc_form_validators import FormValidator
 from edc_screening.utils import get_subject_screening_model_cls
 
@@ -16,7 +16,10 @@ class PatientLogFormValidator(FormValidator):
         super().__init__(**kwargs)
 
     def clean(self):
-        if self.instance.patient_group and self.instance.patient_group.randomized:
+        if (
+            self.instance.id
+            and self.instance.patientgroup_set.filter(randomized=True).exists()
+        ):
             self.raise_validation_error(
                 "A patient in a randomized group may not be changed", INVALID_RANDOMIZE
             )
@@ -80,27 +83,27 @@ class PatientLogFormValidator(FormValidator):
         self.required_if(
             YES, field="second_health_talk", field_required="second_health_talk_date"
         )
-        self.validate_group_changes()
+        # self.validate_group_changes()
 
-    def validate_group_changes(self):
-        if from_group := self.instance.patient_group:
-            to_group = self.cleaned_data.get("patient_group")
-            if not to_group:
-                if from_group.status == COMPLETE:
-                    self.raise_validation_error(
-                        "Cannot remove from current group. Group is complete.", INVALID_GROUP
-                    )
-            elif to_group:
-                if from_group.name == to_group.name:
-                    pass
-                elif from_group.status == COMPLETE:
-                    self.raise_validation_error(
-                        "Cannot remove from current group. Group is complete.", INVALID_GROUP
-                    )
-                elif to_group.status == COMPLETE:
-                    self.raise_validation_error(
-                        "Cannot add to group. Group is complete.", INVALID_GROUP
-                    )
+    # def validate_group_changes(self):
+    #     if from_group := self.instance.patient_group:
+    #         to_group = self.cleaned_data.get("patient_group")
+    #         if not to_group:
+    #             if from_group.status == COMPLETE:
+    #                 self.raise_validation_error(
+    #                     "Cannot remove from current group. Group is complete.", INVALID_GROUP
+    #                 )
+    #         elif to_group:
+    #             if from_group.name == to_group.name:
+    #                 pass
+    #             elif from_group.status == COMPLETE:
+    #                 self.raise_validation_error(
+    #                     "Cannot remove from current group. Group is complete.", INVALID_GROUP
+    #                 )
+    #             elif to_group.status == COMPLETE:
+    #                 self.raise_validation_error(
+    #                     "Cannot add to group. Group is complete.", INVALID_GROUP
+    #                 )
 
     @property
     def subject_screening(self):

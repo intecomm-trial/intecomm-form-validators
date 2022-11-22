@@ -2,34 +2,17 @@ from unittest.mock import patch
 
 from dateutil.relativedelta import relativedelta
 from django import forms
-from django.test import TestCase
 from django_mock_queries.query import MockModel, MockSet
-from edc_constants.constants import COMPLETE, FEMALE, MALE
+from edc_constants.constants import FEMALE, MALE
 from edc_utils import get_utcnow
 
-from intecomm_form_validators.constants import RECRUITING
 from intecomm_form_validators.screening import PatientLogFormValidator as Base
 
-
-class SubjectScreeningMockModel(MockModel):
-    def __init__(self, *args, **kwargs):
-        kwargs["mock_name"] = "SubjectScreening"
-        super().__init__(*args, **kwargs)
+from ..mock_models import PatientGroupMockModel, PatientLogMockModel
+from ..test_case_mixin import TestCaseMixin
 
 
-class PatientGroupMockModel(MockModel):
-    def __init__(self, *args, **kwargs):
-        kwargs["mock_name"] = "PatientGroup"
-        super().__init__(*args, **kwargs)
-
-
-class PatientLogMockModel(MockModel):
-    def __init__(self, *args, **kwargs):
-        kwargs["mock_name"] = "PatientLog"
-        super().__init__(*args, **kwargs)
-
-
-class PatientLogTests(TestCase):
+class PatientLogTests(TestCaseMixin):
     @staticmethod
     def get_form_validator_cls(subject_screening=None):
         class PatientLogFormValidator(Base):
@@ -38,14 +21,6 @@ class PatientLogTests(TestCase):
                 return subject_screening
 
         return PatientLogFormValidator
-
-    def test_raises_if_randomized(self):
-        patient_group = PatientGroupMockModel(randomized=True)
-        patient_log = PatientLogMockModel(patient_group=patient_group)
-        form_validator = self.get_form_validator_cls()(
-            cleaned_data={}, instance=patient_log, model=PatientLogMockModel
-        )
-        self.assertRaises(forms.ValidationError, form_validator.validate)
 
     def test_raises_if_last_routine_appt_date_is_future(self):
         patient_group = PatientGroupMockModel(name="PARKSIDE", randomized=None)
@@ -99,103 +74,6 @@ class PatientLogTests(TestCase):
             form_validator.validate()
         except forms.ValidationError:
             self.fail("ValidationError unexpectedly raised")
-
-    def test_add_patient_log_to_group(self):
-        patient_log = PatientLogMockModel()
-        patient_group = PatientGroupMockModel(
-            name="PARKSIDE", patients=MockSet(), randomized=None
-        )
-        cleaned_data = dict(
-            name="ERIK",
-            report_datetime=get_utcnow(),
-            patient_group=patient_group,
-        )
-        form_validator = self.get_form_validator_cls()(
-            cleaned_data=cleaned_data, instance=patient_log, model=PatientLogMockModel
-        )
-        form_validator.validate()
-
-    def test_move_group(self):
-        patient_group = PatientGroupMockModel(
-            name="WESTWOOD", patients=MockSet(), randomized=None, status=RECRUITING
-        )
-        patient_log = PatientLogMockModel(name="BUBBA", patient_group=patient_group)
-        cleaned_data = dict(
-            patient_group=patient_group,
-        )
-        form_validator = self.get_form_validator_cls()(
-            cleaned_data=cleaned_data, instance=patient_log, model=PatientLogMockModel
-        )
-        form_validator.validate()
-
-    def test_remove_group(self):
-        patient_group = PatientGroupMockModel(
-            name="WESTWOOD", patients=MockSet(), randomized=None, status=RECRUITING
-        )
-        patient_log = PatientLogMockModel(name="BUBBA", patient_group=patient_group)
-        cleaned_data = dict(patient_group=None)
-        form_validator = self.get_form_validator_cls()(
-            cleaned_data=cleaned_data, instance=patient_log, model=PatientLogMockModel
-        )
-        form_validator.validate()
-
-    def test_remove_group_not_allowed_if_complete(self):
-        patient_log = MockModel(
-            mock_name="PatientLog",
-            name="BUBBA",
-            patient_group=MockModel(
-                mock_name="PatientGroup",
-                name="NORTHSIDE",
-                randomized=None,
-                status=COMPLETE,
-            ),
-        )
-        cleaned_data = dict(patient_group=None)
-        form_validator = self.get_form_validator_cls()(
-            cleaned_data=cleaned_data, instance=patient_log, model=PatientLogMockModel
-        )
-        with self.assertRaises(forms.ValidationError) as cm:
-            form_validator.validate()
-        self.assertIn(
-            "Cannot remove from current group. Group is complete.",
-            cm.exception.message_dict.get("__all__")[0],
-        )
-
-        patient_group = PatientGroupMockModel(
-            name="WESTWOOD",
-            patients=MockSet(patient_log),
-            randomized=None,
-            status=COMPLETE,
-        )
-
-        cleaned_data = dict(patient_group=patient_group)
-        form_validator = self.get_form_validator_cls()(
-            cleaned_data=cleaned_data, instance=patient_log, model=PatientLogMockModel
-        )
-        with self.assertRaises(forms.ValidationError) as cm:
-            form_validator.validate()
-        self.assertIn(
-            "Cannot remove from current group. Group is complete.",
-            cm.exception.message_dict.get("__all__")[0],
-        )
-
-    def test_move_group_not_allowed_if_complete(self):
-        patient_group1 = PatientGroupMockModel(
-            name="WESTWOOD", patients=MockSet(), randomized=None, status=COMPLETE
-        )
-        patient_group2 = PatientGroupMockModel(
-            name="NORTHSIDE", patients=MockSet(), randomized=None
-        )
-        patient_log2 = PatientLogMockModel(name="BUBBA", patient_group=patient_group2)
-        cleaned_data = dict(
-            patient_group=patient_group1,
-        )
-        form_validator = self.get_form_validator_cls()(
-            cleaned_data=cleaned_data, instance=patient_log2, model=PatientLogMockModel
-        )
-        with self.assertRaises(forms.ValidationError) as cm:
-            form_validator.validate()
-        self.assertIn("Cannot add to group", cm.exception.message_dict.get("__all__")[0])
 
     def test_patient_log_matches_screening(self):
         patient_log = PatientLogMockModel(name="ERIK")
@@ -265,3 +143,26 @@ class PatientLogTests(TestCase):
             instance=MockModel(mock_name="PatientLog", name="BUBBA", screening_identifier="B"),
         )
         self.assertIsNotNone(form_validator.subject_screening)
+
+    # @tag("1")
+    # def test_attempt_to_change_patient_in_randomized_group_raises(self):
+    #     patients = self.get_mock_patients(ratio=[10, 0, 4])
+    #     save_patients = []
+    #     for patient in patients:
+    #         patient.id = uuid4()
+    #         save_patients.append(patient)
+    #     patient_group = PatientGroupMockModel(
+    #         randomized=True, patients=MockSet(*save_patients)
+    #     )
+    #     patient_group.save()
+    #
+    #     patient_log = save_patients[0]
+    #     cleaned_data = dict(
+    #         next_routine_appt_date=(get_utcnow() + relativedelta(days=60)).date(),
+    #     )
+    #     form_validator = self.get_form_validator_cls()(
+    #         cleaned_data=cleaned_data, instance=patient_log, model=PatientLogMockModel
+    #     )
+    #     with self.assertRaises(forms.ValidationError) as cm:
+    #         form_validator.validate()
+    #     self.assertIn("next_routine_appt_date", cm.exception.error_dict)

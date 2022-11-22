@@ -29,6 +29,10 @@ class PatientGroupSizeError(Exception):
     pass
 
 
+class PatientGroupMakeupError(Exception):
+    pass
+
+
 def verify_patient_group_ratio_raise(
     patients, raise_on_outofrange: bool | None = None
 ) -> Tuple[int, int, Decimal, bool]:
@@ -70,6 +74,36 @@ def confirm_patient_group_size_or_raise(
         raise PatientGroupSizeError(
             f"Patient group must have at least { group_count_min} patients. "
             f"Got {patients.count()}."
+        )
+
+
+def confirm_patient_group_minimum_of_each_condition_or_raise(
+    patients: QuerySet | None = None,
+) -> None:
+    """Confirm at least 2 of each condition
+
+    A minimum of two people with each of HIV, diabetes and
+    hypertension will be selected per group. The rest will be
+    patients with a variable mixture of the three conditions
+    """
+    hiv_only = 0
+    for patient in patients.all():
+        hiv_only += patient.conditions.filter(name=HIV).exclude(name__in=[DM, HTN]).count()
+        if hiv_only >= 2:
+            break
+    if hiv_only < 2:
+        raise PatientGroupMakeupError(
+            f"Patient group must have at least 2 HIV only patients. Got {hiv_only}."
+        )
+
+    ncd_only = 0
+    for patient in patients.all():
+        ncd_only += patient.conditions.filter(name__in=[DM, HTN]).exclude(name=HIV).count()
+        if ncd_only >= 4:
+            break
+    if ncd_only < 4:
+        raise PatientGroupMakeupError(
+            f"Patient group must have at least 4 NCD only patients. Got {ncd_only}."
         )
 
 
