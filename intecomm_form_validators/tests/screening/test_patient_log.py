@@ -22,24 +22,22 @@ class PatientLogTests(TestCaseMixin):
 
         return PatientLogFormValidator
 
-    def test_raises_if_last_routine_appt_date_is_future(self):
+    def test_raises_if_last_appt_date_is_future(self):
         patient_group = PatientGroupMockModel(name="PARKSIDE", randomized=None)
         patient_log = PatientLogMockModel()
         cleaned_data = dict(
             name="ERIK",
             patient_group=patient_group,
             report_datetime=get_utcnow(),
-            last_routine_appt_date=(get_utcnow() + relativedelta(days=30)).date(),
+            last_appt_date=(get_utcnow() + relativedelta(days=30)).date(),
         )
         form_validator = self.get_form_validator_cls()(
             cleaned_data=cleaned_data, instance=patient_log, model=PatientLogMockModel
         )
         with self.assertRaises(forms.ValidationError) as cm:
             form_validator.validate()
-        self.assertIn("last_routine_appt_date", cm.exception.error_dict)
-        cleaned_data.update(
-            last_routine_appt_date=(get_utcnow() - relativedelta(days=30)).date()
-        )
+        self.assertIn("last_appt_date", cm.exception.error_dict)
+        cleaned_data.update(last_appt_date=(get_utcnow() - relativedelta(days=30)).date())
         form_validator = self.get_form_validator_cls()(
             cleaned_data=cleaned_data, instance=patient_log, model=PatientLogMockModel
         )
@@ -48,25 +46,23 @@ class PatientLogTests(TestCaseMixin):
         except forms.ValidationError:
             self.fail("ValidationError unexpectedly raised")
 
-    def test_raises_if_next_routine_appt_date_is_past(self):
+    def test_raises_if_next_appt_date_is_past(self):
         patient_group = PatientGroupMockModel(name="PARKSIDE", randomized=None)
         patient_log = PatientLogMockModel()
         cleaned_data = dict(
             name="ERIK",
             patient_group=patient_group,
             report_datetime=get_utcnow(),
-            next_routine_appt_date=(get_utcnow() - relativedelta(days=30)).date(),
+            next_appt_date=(get_utcnow() - relativedelta(days=30)).date(),
         )
         form_validator = self.get_form_validator_cls()(
             cleaned_data=cleaned_data, instance=patient_log, model=PatientLogMockModel
         )
         with self.assertRaises(forms.ValidationError) as cm:
             form_validator.validate()
-        self.assertIn("next_routine_appt_date", cm.exception.error_dict)
+        self.assertIn("next_appt_date", cm.exception.error_dict)
 
-        cleaned_data.update(
-            next_routine_appt_date=(get_utcnow() + relativedelta(days=30)).date()
-        )
+        cleaned_data.update(next_appt_date=(get_utcnow() + relativedelta(days=30)).date())
         form_validator = self.get_form_validator_cls()(
             cleaned_data=cleaned_data, instance=patient_log, model=PatientLogMockModel
         )
@@ -85,8 +81,22 @@ class PatientLogTests(TestCaseMixin):
             ("gender", "gender", FEMALE, MALE, "Gender", True),
             ("initials", "initials", "XX", "XX", "Initials", False),
             ("initials", "initials", "XX", "YY", "Initials", True),
-            ("hospital_identifier", "hf_identifier", "12345", "12345", "Identifier", False),
-            ("hospital_identifier", "hf_identifier", "12345", "54321", "Identifier", True),
+            (
+                "hospital_identifier",
+                "hospital_identifier",
+                "12345",
+                "12345",
+                "Identifier",
+                False,
+            ),
+            (
+                "hospital_identifier",
+                "hospital_identifier",
+                "12345",
+                "54321",
+                "Identifier",
+                True,
+            ),
             (
                 "site",
                 "site",
@@ -158,11 +168,11 @@ class PatientLogTests(TestCaseMixin):
     #
     #     patient_log = save_patients[0]
     #     cleaned_data = dict(
-    #         next_routine_appt_date=(get_utcnow() + relativedelta(days=60)).date(),
+    #         next_appt_date=(get_utcnow() + relativedelta(days=60)).date(),
     #     )
     #     form_validator = self.get_form_validator_cls()(
     #         cleaned_data=cleaned_data, instance=patient_log, model=PatientLogMockModel
     #     )
     #     with self.assertRaises(forms.ValidationError) as cm:
     #         form_validator.validate()
-    #     self.assertIn("next_routine_appt_date", cm.exception.error_dict)
+    #     self.assertIn("next_appt_date", cm.exception.error_dict)

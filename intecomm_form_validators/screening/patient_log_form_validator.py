@@ -42,7 +42,7 @@ class PatientLogFormValidator(FormValidator):
         if (
             self.subject_screening
             and self.subject_screening.hospital_identifier
-            != self.cleaned_data.get("hf_identifier")
+            != self.cleaned_data.get("hospital_identifier")
         ):
             self.raise_validation_error(
                 "Patient has already screened. Heath Facility Identifier may not change",
@@ -59,23 +59,23 @@ class PatientLogFormValidator(FormValidator):
             )
 
         if (
-            self.cleaned_data.get("last_routine_appt_date")
+            self.cleaned_data.get("last_appt_date")
             and self.cleaned_data.get("report_datetime")
-            and self.cleaned_data.get("last_routine_appt_date")
+            and self.cleaned_data.get("last_appt_date")
             > self.cleaned_data.get("report_datetime").date()
         ):
             self.raise_validation_error(
-                {"last_routine_appt_date": "Cannot be a future date"}, INVALID_APPOINTMENT_DATE
+                {"last_appt_date": "Cannot be a future date"}, INVALID_APPOINTMENT_DATE
             )
 
         if (
-            self.cleaned_data.get("next_routine_appt_date")
+            self.cleaned_data.get("next_appt_date")
             and self.cleaned_data.get("report_datetime")
-            and self.cleaned_data.get("next_routine_appt_date")
+            and self.cleaned_data.get("next_appt_date")
             < self.cleaned_data.get("report_datetime").date()
         ):
             self.raise_validation_error(
-                {"next_routine_appt_date": "Must be a future date"}, INVALID_APPOINTMENT_DATE
+                {"next_appt_date": "Must be a future date"}, INVALID_APPOINTMENT_DATE
             )
         self.required_if(
             YES, field="first_health_talk", field_required="first_health_talk_date"
