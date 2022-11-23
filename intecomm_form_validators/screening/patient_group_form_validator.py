@@ -11,6 +11,7 @@ from ..utils import (
     PatientNotStableError,
     confirm_patient_group_size_or_raise,
     confirm_patients_stable_and_screened_and_consented_or_raise,
+    get_min_group_size_for_ratio,
     verify_patient_group_ratio_raise,
 )
 
@@ -22,9 +23,6 @@ INVALID_STATUS = "INVALID_STATUS"
 
 
 class PatientGroupScreeningFormValidator(FormValidator):
-
-    group_count_min = 14
-
     def clean(self):
 
         self.block_changes_if_already_randomized()
@@ -71,7 +69,7 @@ class PatientGroupScreeningFormValidator(FormValidator):
     def confirm_patient_group_size_or_raise(self):
         try:
             confirm_patient_group_size_or_raise(
-                enforce_group_size_min=self.cleaned_data.get("enforce_group_size_min"),
+                bypass_group_size_min=self.cleaned_data.get("bypass_group_size_min"),
                 patients=self.cleaned_data.get("patients") or self.instance.patients,
             )
         except PatientGroupSizeError as e:
@@ -86,8 +84,10 @@ class PatientGroupScreeningFormValidator(FormValidator):
             self.raise_validation_error({"__all__": str(e)}, INVALID_PATIENT)
 
     def verify_patient_group_ratio_raise(self):
-        if self.cleaned_data.get("enforce_ratio") is None or self.cleaned_data.get(
-            "enforce_ratio"
+        patients = self.cleaned_data.get("patients") or self.instance.patients
+        if (
+            not self.cleaned_data.get("bypass_group_ratio")
+            and patients.all().count() >= get_min_group_size_for_ratio()
         ):
             try:
                 verify_patient_group_ratio_raise(

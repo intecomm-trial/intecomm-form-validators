@@ -11,6 +11,7 @@ class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormVali
     def clean(self):
         self.get_consent_for_period_or_raise()
         self.validate_gender_against_patient_log()
+        self.validate_age_in_years_against_patient_log()
         if (
             self.cleaned_data.get("consent_ability")
             and self.cleaned_data.get("consent_ability") == NO
@@ -45,6 +46,20 @@ class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormVali
                 {
                     "gender": (
                         f"Invalid. Expected {self.patient_log.get_gender_display()}. "
+                        "See Patient Log."
+                    )
+                },
+                INVALID_ERROR,
+            )
+
+        pass
+
+    def validate_age_in_years_against_patient_log(self):
+        if self.cleaned_data.get("age_in_years") != self.patient_log.age_in_years:
+            self.raise_validation_error(
+                {
+                    "age_in_years": (
+                        f"Invalid. Expected {self.patient_log.age_in_years}. "
                         "See Patient Log."
                     )
                 },

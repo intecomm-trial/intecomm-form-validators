@@ -47,5 +47,7 @@ class TestCaseMixin(TestCase):
             stable=stable,
             screening_identifier=screening_identifier,
             subject_identifier=subject_identifier,
-            conditions=MockSet(*[ConditionsMockModel(name=x) for x in conditions]),
+            conditions=MockSet(
+                *[ConditionsMockModel(name=x) for x in conditions],
+            ),
         )
