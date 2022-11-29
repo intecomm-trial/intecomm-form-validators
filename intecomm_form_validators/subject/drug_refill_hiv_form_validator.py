@@ -1,6 +1,6 @@
 from edc_crf.crf_form_validator_mixins import CrfFormValidatorMixin
 from edc_form_validators import FormValidator
-from edc_rx_refill.utils import validate_total_days
+from edc_rx.utils import validate_total_days
 
 from .mixins import DrugRefillFormValidatorMixin
 
