@@ -4,3 +4,4 @@ from .drug_refill_hiv_form_validator import DrugRefillHivFormValidator
 from .drug_refill_htn_form_validator import DrugRefillHtnFormValidator
 from .hiv_review_form_validator import HivReviewFormValidator
 from .htn_review_form_validator import HtnReviewFormValidator
+from .social_harms_form_validator import SocialHarmsFormValidator
