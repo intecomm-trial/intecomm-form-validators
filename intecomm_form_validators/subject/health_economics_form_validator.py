@@ -1,6 +1,14 @@
 from django import forms
 from django.apps import apps as django_apps
-from edc_constants.constants import FREE_OF_CHARGE, OTHER, YES
+from edc_constants.constants import (
+    FREE_OF_CHARGE,
+    INSURANCE,
+    OTHER,
+    OWN_CASH,
+    PATIENT_CLUB,
+    RELATIVE,
+    YES,
+)
 from edc_crf.crf_form_validator_mixins import CrfFormValidatorMixin
 from edc_dx.form_validators import DiagnosisFormValidatorMixin
 from edc_dx_review.utils import raise_if_clinical_review_does_not_exist
@@ -118,7 +126,10 @@ class HealthEconomicsFormValidator(
             self.m2m_other_specify(
                 *[
                     obj.name
-                    for obj in self.drug_pay_sources_model_cls.objects.all()
+                    for obj in (
+                        # NOTE: Must align with choices in intecomm_lists.models.DrugPaySources
+                        (OWN_CASH, INSURANCE, PATIENT_CLUB, RELATIVE, FREE_OF_CHARGE, OTHER)
+                    )
                     if obj.name != FREE_OF_CHARGE
                 ],
                 m2m_field=f"rx_{cond}_paid_{duration}",
