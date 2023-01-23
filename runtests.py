@@ -17,6 +17,7 @@ DEFAULT_SETTINGS = dict(  # nosec B106
     DEBUG=True,
     SUBJECT_CONSENT_MODEL=None,
     SUBJECT_SCREENING_MODEL=None,
+    EDC_DX_LABELS=dict(hiv="HIV", dm="Diabetes", htn="Hypertension"),
     ALLOWED_HOSTS=[],
     INSTALLED_APPS=[
         "django.contrib.admin",

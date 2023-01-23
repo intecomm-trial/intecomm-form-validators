@@ -1,10 +1,10 @@
 from django import forms
+from django.apps import apps as django_apps
 from edc_constants.constants import FREE_OF_CHARGE, OTHER, YES
 from edc_crf.crf_form_validator_mixins import CrfFormValidatorMixin
 from edc_dx.form_validators import DiagnosisFormValidatorMixin
 from edc_dx_review.utils import raise_if_clinical_review_does_not_exist
 from edc_form_validators import FormValidator
-from intecomm_lists.models import DrugPaySources
 
 
 class HealthEconomicsFormValidator(
@@ -12,6 +12,8 @@ class HealthEconomicsFormValidator(
     CrfFormValidatorMixin,
     FormValidator,
 ):
+    drug_pay_sources_model = "intecomm_lists.DrugPaySources"
+
     def clean(self):
         raise_if_clinical_review_does_not_exist(self.cleaned_data.get("subject_visit"))
 
@@ -24,6 +26,10 @@ class HealthEconomicsFormValidator(
         self.required_if(YES, field="health_insurance", field_required="health_insurance_cost")
 
         self.required_if(YES, field="patient_club", field_required="patient_club_cost")
+
+    @property
+    def drug_pay_sources_model_cls(self):
+        return django_apps.get_model(self.drug_pay_sources_model)
 
     def clean_education(self):
         cond = (
@@ -112,7 +118,7 @@ class HealthEconomicsFormValidator(
             self.m2m_other_specify(
                 *[
                     obj.name
-                    for obj in DrugPaySources.objects.all()
+                    for obj in self.drug_pay_sources_model_cls.objects.all()
                     if obj.name != FREE_OF_CHARGE
                 ],
                 m2m_field=f"rx_{cond}_paid_{duration}",

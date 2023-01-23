@@ -35,15 +35,21 @@ class PatientGroupMakeupError(Exception):
 
 
 def get_min_group_size() -> int:
+    """Returns minimum number of patients needed to form a group"""
     return getattr(settings, "INTECOMM_MIN_GROUP_SIZE", 14)
 
 
-def get_min_group_size_for_ratio() -> int:
+def get_group_size_for_ratio() -> int:
+    """Returns number of patients to use to determine the condition
+     ratio.
+
+    Additional group members can be of any condition.
+    """
     return getattr(settings, "INTECOMM_MIN_GROUP_SIZE_FOR_RATIO", 9)
 
 
 def verify_patient_group_ratio_raise(
-    patients, raise_on_outofrange: bool | None = None
+    patients: iter, raise_on_outofrange: bool | None = None
 ) -> Tuple[int, int, Decimal, bool]:
     ncd = 0.0
     hiv = 0.0
@@ -130,16 +136,19 @@ def confirm_patients_stable_and_screened_and_consented_or_raise(
         raise PatientGroupSizeError("Patient group has no patients.")
     else:
         for patient_log in patients.all():
-            link = (
-                f'See <a href="{patient_log.get_changelist_url()}?'
+            link = format_html(
+                f'<a href="{patient_log.get_changelist_url()}?'
                 f'q={str(patient_log.id)}">{patient_log}</a>'
             )
             if patient_log.stable != YES:
-                errmsg = format_html(f"Patient is not known to be stable and in-care. {link}.")
+                errmsg = format_html(
+                    "Patient is not known to be stable and in-care. "
+                    f"See patient log for {link}."
+                )
                 raise PatientNotStableError(errmsg)
             if not patient_log.screening_identifier:
-                errmsg = format_html(f"Patient has not screened for eligibility. {link}.")
+                errmsg = format_html(f"Patient has not screened for eligibility. See {link}.")
                 raise PatientNotScreenedError(errmsg)
             if not patient_log.subject_identifier:
-                errmsg = format_html(f"Patient has not consented. {link}.")
+                errmsg = format_html(f"Patient has not consented. See {link}.")
                 raise PatientNotConsentedError(errmsg)

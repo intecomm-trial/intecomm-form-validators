@@ -11,7 +11,7 @@ from ..utils import (
     PatientNotStableError,
     confirm_patient_group_size_or_raise,
     confirm_patients_stable_and_screened_and_consented_or_raise,
-    get_min_group_size_for_ratio,
+    get_group_size_for_ratio,
     verify_patient_group_ratio_raise,
 )
 
@@ -22,7 +22,7 @@ INVALID_CONDITION_RATIO = "INVALID_CONDITION_RATIO"
 INVALID_STATUS = "INVALID_STATUS"
 
 
-class PatientGroupScreeningFormValidator(FormValidator):
+class PatientGroupFormValidator(FormValidator):
     def clean(self):
 
         self.block_changes_if_already_randomized()
@@ -87,20 +87,18 @@ class PatientGroupScreeningFormValidator(FormValidator):
         patients = self.cleaned_data.get("patients") or self.instance.patients
         if (
             not self.cleaned_data.get("bypass_group_ratio")
-            and patients.all().count() >= get_min_group_size_for_ratio()
+            and patients.all().count() >= get_group_size_for_ratio()
         ):
             try:
-                verify_patient_group_ratio_raise(
-                    patients=self.cleaned_data.get("patients") or self.instance.patients
-                )
+                verify_patient_group_ratio_raise(patients=patients.all())
             except PatientGroupRatioError as e:
                 group_name = self.cleaned_data.get("name")
-                errmsg = format_html(
+                errmsg = (
                     f'See group <a href="{self.instance.get_changelist_url(group_name)}">'
-                    f"{group_name}</a>",
+                    f"{group_name}</a>"
                 )
                 self.raise_validation_error(
-                    {"__all__": f"{e} {errmsg}"}, INVALID_CONDITION_RATIO
+                    {"__all__": format_html(f"{e} {errmsg}")}, INVALID_CONDITION_RATIO
                 )
 
     def block_changes_if_randomized(self):
