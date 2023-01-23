@@ -83,7 +83,6 @@ DEFAULT_SETTINGS = dict(  # nosec B106
     USE_TZ=True,
     STATIC_URL="/static/",
     DEFAULT_AUTO_FIELD="django.db.models.BigAutoField",
-    EDC_DX_LABELS=dict(hiv="HIV", dm="Diabetes", htn="Hypertension"),
 )
 
 
