@@ -55,6 +55,13 @@ class ConditionsMockModel(MockModel):
         self._meta.label_lower = "intecomm_list.condition"
 
 
+class IndicatorsMockModel(MockModel):
+    def __init__(self, *args, **kwargs):
+        kwargs["mock_name"] = "Indicators"
+        super().__init__(*args, **kwargs)
+        self._meta.label_lower = "intecomm_subject.indicators"
+
+
 class SocialHarmsMockModel(MockModel):
     def __init__(self, *args, **kwargs):
         kwargs["mock_name"] = "SocialHarms"

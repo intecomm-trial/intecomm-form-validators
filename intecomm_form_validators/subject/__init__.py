@@ -5,4 +5,5 @@ from .drug_refill_htn_form_validator import DrugRefillHtnFormValidator
 from .health_economics_form_validator import HealthEconomicsFormValidator
 from .hiv_review_form_validator import HivReviewFormValidator
 from .htn_review_form_validator import HtnReviewFormValidator
+from .indicators_form_validator import IndicatorsFormValidator
 from .social_harms_form_validator import SocialHarmsFormValidator
