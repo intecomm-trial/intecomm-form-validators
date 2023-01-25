@@ -22,11 +22,11 @@ class TestCaseMixin(TestCase):
         patients = []
         ratio = ratio or (5, 5, 4)  # (DM, HTN, HIV)
         for i in range(0, ratio[0]):
-            patients.append(self.get_mock_patient(DM, i, stable, screen, consent))
+            patients.append(self.get_mock_patient(DM, i + 100, stable, screen, consent))
         for i in range(0, ratio[1]):
-            patients.append(self.get_mock_patient(HTN, i, stable, screen, consent))
+            patients.append(self.get_mock_patient(HTN, i + 200, stable, screen, consent))
         for i in range(0, ratio[2]):
-            patients.append(self.get_mock_patient(HIV, i, stable, screen, consent))
+            patients.append(self.get_mock_patient(HIV, i + 300, stable, screen, consent))
         return patients
 
     @staticmethod
