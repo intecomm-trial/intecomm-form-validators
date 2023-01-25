@@ -60,3 +60,10 @@ class SocialHarmsMockModel(MockModel):
         kwargs["mock_name"] = "SocialHarms"
         super().__init__(*args, **kwargs)
         self._meta.label_lower = "intecomm_subject.socialharms"
+
+
+class VitalsMockModel(MockModel):
+    def __init__(self, *args, **kwargs):
+        kwargs["mock_name"] = "Vitals"
+        super().__init__(*args, **kwargs)
+        self._meta.label_lower = "intecomm_subject.vitals"
