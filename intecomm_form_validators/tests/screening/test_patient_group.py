@@ -5,9 +5,7 @@ from django_mock_queries.query import MockSet
 from edc_constants.constants import COMPLETE, NO, YES
 
 from intecomm_form_validators.constants import RECRUITING
-from intecomm_form_validators.screening import (
-    PatientGroupScreeningFormValidator as Base,
-)
+from intecomm_form_validators.screening import PatientGroupFormValidator as Base
 
 from ..mock_models import PatientGroupMockModel
 from ..test_case_mixin import TestCaseMixin

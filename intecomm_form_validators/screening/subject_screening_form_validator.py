@@ -9,9 +9,11 @@ INVALID_DURATION_IN_CARE = "invalid_duration_in_care"
 
 class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormValidator):
     def clean(self):
+        self.validate_stable_in_care_on_patient_log()
         self.get_consent_for_period_or_raise()
         self.validate_gender_against_patient_log()
         self.validate_age_in_years_against_patient_log()
+
         if (
             self.cleaned_data.get("consent_ability")
             and self.cleaned_data.get("consent_ability") == NO
@@ -39,6 +41,19 @@ class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormVali
         self.required_if(
             YES, field="unsuitable_for_study", field_required="reasons_unsuitable"
         )
+
+    def validate_stable_in_care_on_patient_log(self):
+        if self.patient_log.stable != YES:
+            self.raise_validation_error(
+                {
+                    "__all__": (
+                        "Invalid. Patient not reported as stable in care. See Patient Log."
+                    )
+                },
+                INVALID_ERROR,
+            )
+
+        pass
 
     def validate_gender_against_patient_log(self):
         if self.cleaned_data.get("gender") != self.patient_log.gender:
