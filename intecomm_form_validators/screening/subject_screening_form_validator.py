@@ -1,4 +1,5 @@
 from dateutil.relativedelta import relativedelta
+from django.utils.html import format_html
 from edc_constants.constants import DM, HIV, HTN, MALE, NO, YES
 from edc_form_validators import INVALID_ERROR, FormValidator
 from edc_model import InvalidFormat, duration_to_date
@@ -44,14 +45,15 @@ class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormVali
 
     def validate_stable_in_care_on_patient_log(self):
         if self.patient_log.stable != YES:
-            self.raise_validation_error(
-                {
-                    "__all__": (
-                        "Invalid. Patient not reported as stable in care. See Patient Log."
-                    )
-                },
-                INVALID_ERROR,
+            link = (
+                f'<a href="{self.patient_log.get_changelist_url()}?'
+                f'q={str(self.patient_log.id)}">{self.patient_log}</a>'
             )
+            errmsg = format_html(
+                "Invalid. Patient is not known to be stable and in-care. "
+                f"See patient log for {link}."
+            )
+            self.raise_validation_error(errmsg, error_code=INVALID_ERROR)
 
         pass
 
