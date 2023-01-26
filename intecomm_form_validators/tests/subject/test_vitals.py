@@ -181,17 +181,19 @@ class VitalsFormValidationTests(TestCaseMixin):
             (109, 111),
             (111, 109),
             (110, 110),
-            (150, 80),
-            (80, 150),
-            (225, 80),
-            (80, 225),
+            (150, 81),
+            (81, 150),
+            (179, 81),
+            (81, 179),
         ]:
             with self.subTest(reading_one=reading_one, reading_two=reading_two):
                 self.mock_is_baseline.return_value = True
                 cleaned_data = self.get_cleaned_data()
                 cleaned_data.update(
                     {
+                        "sys_blood_pressure_one": 180,
                         "dia_blood_pressure_one": reading_one,
+                        "sys_blood_pressure_two": 180,
                         "dia_blood_pressure_two": reading_two,
                         "severe_htn": NO,
                     }

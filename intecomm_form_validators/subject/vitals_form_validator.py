@@ -19,12 +19,6 @@ class VitalsFormValidator(
         )
         # TODO: Require weight also at 12M
 
-        self.required_if_true(
-            is_baseline(self.cleaned_data.get("subject_visit")),
-            field_required="height",
-            inverse=False,
-        )
-
         for bp_reading in ["one", "two"]:
             self.raise_on_systolic_lt_diastolic_bp(
                 sys_field=f"sys_blood_pressure_{bp_reading}",
@@ -33,3 +27,9 @@ class VitalsFormValidator(
             )
 
         self.raise_on_avg_blood_pressure_suggests_severe_htn(**self.cleaned_data)
+
+        self.required_if_true(
+            is_baseline(self.cleaned_data.get("subject_visit")),
+            field_required="height",
+            inverse=False,
+        )
