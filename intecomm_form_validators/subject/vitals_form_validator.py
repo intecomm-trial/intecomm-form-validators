@@ -29,6 +29,7 @@ class VitalsFormValidator(
             self.raise_on_systolic_lt_diastolic_bp(
                 sys_field=f"sys_blood_pressure_{bp_reading}",
                 dia_field=f"dia_blood_pressure_{bp_reading}",
+                **self.cleaned_data,
             )
 
         self.raise_on_avg_blood_pressure_suggests_severe_htn(**self.cleaned_data)

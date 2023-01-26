@@ -112,6 +112,30 @@ class VitalsFormValidationTests(TestCaseMixin):
         except ValidationError as e:
             self.fail(f"ValidationError unexpectedly raised. Got {e}")
 
+    def test_sys_lt_dia_blood_pressure_raises(self):
+        self.mock_is_baseline.return_value = True
+        for reading in ["one", "two"]:
+            for sys_bp, dia_bp in [(80, 120), (90, 100), (99, 100)]:
+                with self.subTest(reading=reading, sys_bp=sys_bp, dia_bp=dia_bp):
+                    cleaned_data = self.get_cleaned_data()
+                    cleaned_data.update(
+                        {
+                            f"sys_blood_pressure_{reading}": sys_bp,
+                            f"dia_blood_pressure_{reading}": dia_bp,
+                            "severe_htn": NO,
+                        }
+                    )
+                    form_validator = VitalsFormValidator(
+                        cleaned_data=cleaned_data, model=VitalsMockModel
+                    )
+                    with self.assertRaises(ValidationError) as cm:
+                        form_validator.validate()
+                    self.assertIn(f"dia_blood_pressure_{reading}", cm.exception.error_dict)
+                    self.assertIn(
+                        "Invalid. Diastolic must be less than systolic.",
+                        str(cm.exception.error_dict.get(f"dia_blood_pressure_{reading}")),
+                    )
+
     def test_sys_blood_pressure_indicates_severe_htn(self):
         for reading_one, reading_two in [
             (179, 181),
