@@ -8,6 +8,7 @@ from django.db.models import QuerySet
 from django.utils.html import format_html
 from edc_constants.constants import DM, HIV, HTN, YES
 from edc_utils import round_up
+from edc_visit_schedule.constants import MONTH12
 
 
 class PatientNotStableError(Exception):
@@ -32,6 +33,10 @@ class PatientGroupSizeError(Exception):
 
 class PatientGroupMakeupError(Exception):
     pass
+
+
+def is_end_of_study(subject_visit):
+    return subject_visit.visit_code == MONTH12 and subject_visit.visit_code_sequence == 0
 
 
 def get_min_group_size() -> int:

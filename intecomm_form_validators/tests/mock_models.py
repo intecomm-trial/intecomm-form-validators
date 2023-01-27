@@ -67,3 +67,21 @@ class VitalsMockModel(MockModel):
         kwargs["mock_name"] = "Vitals"
         super().__init__(*args, **kwargs)
         self._meta.label_lower = "intecomm_subject.vitals"
+
+
+class AppointmentMockModel(MockModel):
+    def __init__(self, *args, **kwargs):
+        kwargs["mock_name"] = "Appointment"
+        super().__init__(*args, **kwargs)
+        self.visit_schedule_name = "visit_schedule"
+        self._meta.label_lower = "edc_appointment.appointment"
+
+
+class SubjectVisitMockModel(MockModel):
+    def __init__(self, appointment, *args, **kwargs):
+        kwargs["mock_name"] = "SubjectVisit"
+        super().__init__(*args, **kwargs)
+        self.appointment = appointment
+        self.visit_schedule_name = appointment.visit_schedule_name
+        self.schedule_name = appointment.schedule_name
+        self._meta.label_lower = "intecomm_subject.subjectvisit"
