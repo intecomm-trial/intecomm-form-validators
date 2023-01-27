@@ -63,6 +63,7 @@ deps =
 commands =
     pip install -U pip
     pip --version
+    pip install -U edc-rx
     pip freeze
     coverage run -a runtests.py
     coverage report

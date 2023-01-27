@@ -4,9 +4,11 @@ from django.test import TestCase
 from django_mock_queries.query import MockSet
 from edc_constants.constants import DM, HIV, HTN, NO, YES
 
-from intecomm_form_validators.tests.mock_models import (
+from .mock_models import (
+    AppointmentMockModel,
     ConditionsMockModel,
     PatientLogMockModel,
+    SubjectVisitMockModel,
 )
 
 
@@ -51,3 +53,18 @@ class TestCaseMixin(TestCase):
                 *[ConditionsMockModel(name=x) for x in conditions],
             ),
         )
+
+    @staticmethod
+    def get_subject_visit(
+        schedule_name: str = None,
+        visit_code: str = None,
+        visit_code_sequence: int = None,
+        timepoint: int = None,
+    ):
+        appointment = AppointmentMockModel(
+            schedule_name=schedule_name,
+            visit_code=visit_code,
+            visit_code_sequence=visit_code_sequence,
+            timepoint=timepoint,
+        )
+        return SubjectVisitMockModel(appointment=appointment)
