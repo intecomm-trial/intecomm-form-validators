@@ -7,7 +7,7 @@ from django.conf import settings
 from django.db.models import QuerySet
 from django.utils.html import format_html
 from edc_constants.constants import DM, HIV, HTN, YES
-from edc_utils import round_up
+from edc_utils.round_up import round_up
 from edc_visit_schedule.constants import MONTH12
 
 
@@ -77,7 +77,7 @@ def verify_patient_group_ratio_raise(
             )
     ncd = int(ncd)
     hiv = int(hiv)
-    return int(ncd), int(hiv), Decimal(str(round_up(ratio, 1))), outofrange
+    return int(ncd), int(hiv), round_up(Decimal(str(ratio)), Decimal("1.00")), outofrange
 
 
 def confirm_patient_group_size_or_raise(
