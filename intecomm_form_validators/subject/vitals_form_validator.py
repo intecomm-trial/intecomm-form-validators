@@ -48,7 +48,10 @@ class VitalsFormValidator(
             dia_field="dia_blood_pressure_two",
             **self.cleaned_data,
         )
+
+        self.applicable_if(YES, field="bp_one_taken", field_applicable="severe_htn")
         opts = {
+            "severe_htn": self.cleaned_data.get("severe_htn"),
             "sys_blood_pressure_one": self.cleaned_data.get("sys_blood_pressure_one"),
             "dia_blood_pressure_one": self.cleaned_data.get("dia_blood_pressure_one"),
             "sys_blood_pressure_two": (

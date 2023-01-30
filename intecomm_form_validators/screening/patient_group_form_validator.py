@@ -59,6 +59,11 @@ class PatientGroupFormValidator(FormValidator):
                 },
                 INVALID_RANDOMIZE,
             )
+        self.not_required_if_true(
+            self.cleaned_data.get("randomize_now") != YES,
+            field="confirm_randomize_now",
+            msg="Only complete if you are ready to randomize now.",
+        )
 
     def block_changes_if_already_randomized(self):
         if self.instance.randomized:
