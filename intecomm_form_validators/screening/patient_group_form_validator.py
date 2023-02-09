@@ -24,7 +24,6 @@ INVALID_STATUS = "INVALID_STATUS"
 
 class PatientGroupFormValidator(FormValidator):
     def clean(self):
-
         self.block_changes_if_already_randomized()
 
         if self.cleaned_data.get("status") and self.cleaned_data.get("status") not in [
