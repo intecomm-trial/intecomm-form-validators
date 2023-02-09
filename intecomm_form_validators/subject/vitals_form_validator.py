@@ -14,7 +14,6 @@ class VitalsFormValidator(
     FormValidator,
 ):
     def clean(self):
-
         raise_if_clinical_review_does_not_exist(self.cleaned_data.get("subject_visit"))
 
         self.weight_required_at_baseline_and_eos()

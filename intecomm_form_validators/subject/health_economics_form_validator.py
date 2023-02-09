@@ -88,7 +88,6 @@ class HealthEconomicsFormValidator(
         ]
         diagnoses = self.get_diagnoses()
         for cond, label in conditions:
-
             if cond == "other":
                 self.applicable_if(
                     YES,
