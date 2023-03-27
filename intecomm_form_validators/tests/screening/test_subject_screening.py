@@ -1,7 +1,7 @@
 from django import forms
 from django.test import TestCase
 from django_mock_queries.query import MockModel, MockSet
-from edc_constants.constants import DM, FEMALE, MALE, NO, YES
+from edc_constants.constants import DM, FEMALE, MALE, NO, NOT_APPLICABLE, YES
 from edc_utils import get_utcnow
 
 from intecomm_form_validators.screening import SubjectScreeningFormValidator as Base
@@ -54,6 +54,30 @@ class SubjectScreeningTests(TestCase):
         )
         opts.update(**kwargs)
         return PatientLogMockModel(**opts)
+
+    def get_cleaned_data(self):
+        return {
+            "gender": MALE,
+            "patient_log": self.patient_log(gender=MALE),
+            "consent_ability": YES,
+            "in_care_6m": YES,
+            "in_care_duration": "5y",
+            "hiv_dx": NO,
+            "dm_dx": YES,
+            "htn_dx": NO,
+        }
+
+    def test_cleaned_data_ok(self):
+        cleaned_data = self.get_cleaned_data()
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=SubjectScreeningMockModel(),
+            model=SubjectScreeningMockModel,
+        )
+        try:
+            form_validator.validate()
+        except forms.ValidationError as e:
+            self.fail(f"ValidationError unexpectedly raised. Got {e}")
 
     def test_gender(self):
         form_validator = self.get_form_validator_cls()(
@@ -269,3 +293,136 @@ class SubjectScreeningTests(TestCase):
 
     def test_eligibility(self):
         pass
+
+    def test_reasons_unsuitable_required_if_unsuitable_for_study_yes(self):
+        cleaned_data = self.get_cleaned_data()
+        cleaned_data.update(
+            {
+                "unsuitable_for_study": YES,
+                "reasons_unsuitable": "",
+            }
+        )
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=SubjectScreeningMockModel(),
+            model=SubjectScreeningMockModel,
+        )
+        with self.assertRaises(forms.ValidationError) as cm:
+            form_validator.validate()
+        self.assertIn("reasons_unsuitable", cm.exception.error_dict)
+        self.assertIn(
+            "This field is required.",
+            str(cm.exception.error_dict.get("reasons_unsuitable")),
+        )
+
+    def test_reasons_unsuitable_not_required_if_unsuitable_for_study_not_yes(self):
+        with self.subTest():
+            cleaned_data = self.get_cleaned_data()
+            cleaned_data.update(
+                {
+                    "unsuitable_for_study": NO,
+                    "reasons_unsuitable": "Some reason ....",
+                }
+            )
+            form_validator = self.get_form_validator_cls()(
+                cleaned_data=cleaned_data,
+                instance=SubjectScreeningMockModel(),
+                model=SubjectScreeningMockModel,
+            )
+            with self.assertRaises(forms.ValidationError) as cm:
+                form_validator.validate()
+            self.assertIn("reasons_unsuitable", cm.exception.error_dict)
+            self.assertIn(
+                "This field is not required.",
+                str(cm.exception.error_dict.get("reasons_unsuitable")),
+            )
+
+    def test_unsuitable_agreed_applicable_if_unsuitable_for_study_yes(self):
+        cleaned_data = self.get_cleaned_data()
+        cleaned_data.update(
+            {
+                "unsuitable_for_study": YES,
+                "reasons_unsuitable": "Some reason",
+                "unsuitable_agreed": NOT_APPLICABLE,
+            }
+        )
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=SubjectScreeningMockModel(),
+            model=SubjectScreeningMockModel,
+        )
+        with self.assertRaises(forms.ValidationError) as cm:
+            form_validator.validate()
+        self.assertIn("unsuitable_agreed", cm.exception.error_dict)
+        self.assertIn(
+            "This field is applicable.",
+            str(cm.exception.error_dict.get("unsuitable_agreed")),
+        )
+
+    def test_unsuitable_agreed_not_applicable_if_unsuitable_for_study_no(self):
+        for agreed_answ in [YES, NO]:
+            with self.subTest(unsuitable_agreed=agreed_answ):
+                cleaned_data = self.get_cleaned_data()
+                cleaned_data.update(
+                    {
+                        "unsuitable_for_study": NO,
+                        "reasons_unsuitable": "",
+                        "unsuitable_agreed": agreed_answ,
+                    }
+                )
+                form_validator = self.get_form_validator_cls()(
+                    cleaned_data=cleaned_data,
+                    instance=SubjectScreeningMockModel(),
+                    model=SubjectScreeningMockModel,
+                )
+                with self.assertRaises(forms.ValidationError) as cm:
+                    form_validator.validate()
+                self.assertIn("unsuitable_agreed", cm.exception.error_dict)
+                self.assertIn(
+                    "This field is not applicable.",
+                    str(cm.exception.error_dict.get("unsuitable_agreed")),
+                )
+
+    def test_unsuitable_agreed_no_raises_if_unsuitable_for_study_yes(self):
+        cleaned_data = self.get_cleaned_data()
+        cleaned_data.update(
+            {
+                "unsuitable_for_study": YES,
+                "reasons_unsuitable": "Reason unsuitable",
+                "unsuitable_agreed": NO,
+            }
+        )
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=SubjectScreeningMockModel(),
+            model=SubjectScreeningMockModel,
+        )
+        with self.assertRaises(forms.ValidationError) as cm:
+            form_validator.validate()
+        self.assertIn("unsuitable_agreed", cm.exception.error_dict)
+        self.assertIn(
+            (
+                "The study coordinator MUST agree with your assessment. "
+                "Please discuss before continuing."
+            ),
+            str(cm.exception.error_dict.get("unsuitable_agreed")),
+        )
+
+    def test_unsuitable_agreed_yes_with_unsuitable_for_study_yes_ok(self):
+        cleaned_data = self.get_cleaned_data()
+        cleaned_data.update(
+            {
+                "unsuitable_for_study": YES,
+                "reasons_unsuitable": "Reason unsuitable",
+                "unsuitable_agreed": YES,
+            }
+        )
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=SubjectScreeningMockModel(),
+            model=SubjectScreeningMockModel,
+        )
+        try:
+            form_validator.validate()
+        except forms.ValidationError as e:
+            self.fail(f"ValidationError unexpectedly raised. Got {e}")
