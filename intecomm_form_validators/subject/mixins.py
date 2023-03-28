@@ -8,6 +8,9 @@ from edc_visit_schedule.utils import is_baseline
 class DrugRefillFormValidatorMixin(FormValidator):
     def clean(self) -> None:
         medications_exists_or_raise(self.cleaned_data.get("subject_visit"))
+
+        self.m2m_other_specify(OTHER, m2m_field="rx", field_other="rx_other")
+
         if (
             self.cleaned_data.get("subject_visit")
             and is_baseline(self.cleaned_data.get("subject_visit"))
