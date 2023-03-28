@@ -39,9 +39,7 @@ class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormVali
             MALE, field="gender", field_applicable="pregnant", inverse=False
         )
 
-        self.required_if(
-            YES, field="unsuitable_for_study", field_required="reasons_unsuitable"
-        )
+        self.validate_suitability_for_study()
 
     def validate_stable_in_care_on_patient_log(self):
         if self.patient_log.stable != YES:
@@ -152,6 +150,22 @@ class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormVali
                     },
                     INVALID_ERROR,
                 )
+
+    def validate_suitability_for_study(self):
+        self.required_if(
+            YES, field="unsuitable_for_study", field_required="reasons_unsuitable"
+        )
+        self.applicable_if(
+            YES, field="unsuitable_for_study", field_applicable="unsuitable_agreed"
+        )
+        if self.cleaned_data.get("unsuitable_agreed") == NO:
+            self.raise_validation_error(
+                {
+                    "unsuitable_agreed": "The study coordinator MUST agree "
+                    "with your assessment. Please discuss before continuing."
+                },
+                INVALID_ERROR,
+            )
 
     @property
     def patient_log(self):
