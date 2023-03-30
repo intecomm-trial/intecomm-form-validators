@@ -15,32 +15,61 @@ from .mock_models import (
 class TestCaseMixin(TestCase):
     def get_mock_patients(
         self,
-        ratio: list[int, int, int] | None = None,
+        dm: int = None,
+        htn: int = None,
+        hiv: int = None,
+        ncd: int = None,
+        hiv_ncd: int = None,
         stable: bool | None = None,
         screen: bool | None = None,
         consent: bool | None = None,
     ) -> list:
         """Returns a list of mock patient logs"""
         patients = []
-        ratio = ratio or (5, 5, 4)  # (DM, HTN, HIV)
+        default_ratio = (5, 5, 4, 0, 0)
+        ratio = (dm or 0, htn or 0, hiv or 0, ncd or 0, hiv_ncd or 0) or default_ratio
         for i in range(0, ratio[0]):
-            patients.append(self.get_mock_patient(DM, i + 100, stable, screen, consent))
+            patients.append(
+                self.get_mock_patient(
+                    DM, i=i + 100, stable=stable, screen=screen, consent=consent
+                )
+            )
         for i in range(0, ratio[1]):
-            patients.append(self.get_mock_patient(HTN, i + 200, stable, screen, consent))
+            patients.append(
+                self.get_mock_patient(
+                    HTN, i=i + 200, stable=stable, screen=screen, consent=consent
+                )
+            )
         for i in range(0, ratio[2]):
-            patients.append(self.get_mock_patient(HIV, i + 300, stable, screen, consent))
+            patients.append(
+                self.get_mock_patient(
+                    HIV, i=i + 300, stable=stable, screen=screen, consent=consent
+                )
+            )
+        for i in range(0, ratio[3]):
+            patients.append(
+                self.get_mock_patient(
+                    DM, HTN, i=i + 300, stable=stable, screen=screen, consent=consent
+                )
+            )
+        for i in range(0, ratio[4]):
+            patients.append(
+                self.get_mock_patient(
+                    HIV, DM, HTN, i=i + 300, stable=stable, screen=screen, consent=consent
+                )
+            )
         return patients
 
     @staticmethod
     def get_mock_patient(
-        condition: str | list[str],
+        *conditions: str | list[str],
         i: int | None = None,
         stable: bool | None = None,
         screen: bool | None = None,
         consent: bool | None = None,
     ):
         """Returns a mock patient log"""
-        conditions = [condition] if isinstance(condition, (str,)) else condition
+        # conditions = [condition] if isinstance(condition, (str,)) else condition
         stable = YES if stable else NO
         screening_identifier = f"XYZ{str(i)}" if screen else None
         subject_identifier = f"999-{str(i)}" if consent else None
