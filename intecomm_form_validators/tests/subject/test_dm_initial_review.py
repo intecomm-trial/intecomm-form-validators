@@ -6,13 +6,11 @@ from unittest.mock import patch
 from dateutil.relativedelta import relativedelta
 from dateutil.utils import today
 from django import forms
-from edc_constants.constants import DM, HIV, HTN, OTHER, YES
+from edc_constants.constants import OTHER, YES
 from edc_dx_review.constants import DIET_LIFESTYLE, DRUGS, INSULIN
 from edc_reportable import MILLIMOLES_PER_LITER
 
 from intecomm_form_validators.subject import DmInitialReviewFormValidator as DmBase
-from intecomm_form_validators.subject import HivInitialReviewFormValidator as HivBase
-from intecomm_form_validators.subject import HtnInitialReviewFormValidator as HtnBase
 
 from ..mock_models import (
     AppointmentMockModel,
@@ -24,23 +22,11 @@ from ..test_case_mixin import TestCaseMixin
 
 class InitialReviewTests(TestCaseMixin):
     @staticmethod
-    def get_form_validator_cls(dx: str):
+    def get_form_validator_cls():
         class DmInitialReviewFormValidator(DmBase):
             pass
 
-        class HtnInitialReviewFormValidator(HtnBase):
-            pass
-
-        class HivInitialReviewFormValidator(HivBase):
-            pass
-
-        if dx == HIV:
-            return HivInitialReviewFormValidator
-        elif dx == HTN:
-            return HtnInitialReviewFormValidator
-        elif dx == DM:
-            return DmInitialReviewFormValidator
-        return None
+        return DmInitialReviewFormValidator
 
     @patch("edc_dx_review.utils.raise_if_clinical_review_does_not_exist")
     def test_cannot_enter_ago_and_exact_date(self, mock_func):
@@ -48,7 +34,7 @@ class InitialReviewTests(TestCaseMixin):
         subject_visit = SubjectVisitMockModel(appointment)
         dm_initial_review = DmInitialReviewMockModel()
         cleaned_data = {"subject_visit": subject_visit, "dx_ago": "2y", "dx_date": today()}
-        form_validator = self.get_form_validator_cls(DM)(
+        form_validator = self.get_form_validator_cls()(
             cleaned_data=cleaned_data,
             instance=dm_initial_review,
             model=DmInitialReviewMockModel,
@@ -69,7 +55,7 @@ class InitialReviewTests(TestCaseMixin):
                     "dx_ago": "2y",
                     "managed_by": managed_by,
                 }
-                form_validator = self.get_form_validator_cls(DM)(
+                form_validator = self.get_form_validator_cls()(
                     cleaned_data=cleaned_data,
                     instance=dm_initial_review,
                     model=DmInitialReviewMockModel,
@@ -89,7 +75,7 @@ class InitialReviewTests(TestCaseMixin):
             "managed_by": DIET_LIFESTYLE,
             "med_start_ago": "blah",
         }
-        form_validator = self.get_form_validator_cls(DM)(
+        form_validator = self.get_form_validator_cls()(
             cleaned_data=cleaned_data,
             instance=dm_initial_review,
             model=DmInitialReviewMockModel,
@@ -110,7 +96,7 @@ class InitialReviewTests(TestCaseMixin):
             "med_start_ago": None,
             "managed_by_other": None,
         }
-        form_validator = self.get_form_validator_cls(DM)(
+        form_validator = self.get_form_validator_cls()(
             cleaned_data=cleaned_data,
             instance=dm_initial_review,
             model=DmInitialReviewMockModel,
@@ -131,7 +117,7 @@ class InitialReviewTests(TestCaseMixin):
             "managed_by": DRUGS,
             "med_start_ago": "3y",
         }
-        form_validator = self.get_form_validator_cls(DM)(
+        form_validator = self.get_form_validator_cls()(
             cleaned_data=cleaned_data,
             instance=dm_initial_review,
             model=DmInitialReviewMockModel,
@@ -141,7 +127,7 @@ class InitialReviewTests(TestCaseMixin):
         self.assertIn("med_start_ago", cm.exception.error_dict)
 
         cleaned_data.update(med_start_ago="2y")
-        form_validator = self.get_form_validator_cls(DM)(
+        form_validator = self.get_form_validator_cls()(
             cleaned_data=cleaned_data,
             instance=dm_initial_review,
             model=DmInitialReviewMockModel,
@@ -152,7 +138,7 @@ class InitialReviewTests(TestCaseMixin):
             self.fail("ValidationError unexpectedly raised")
 
         cleaned_data.update(med_start_ago="1y")
-        form_validator = self.get_form_validator_cls(DM)(
+        form_validator = self.get_form_validator_cls()(
             cleaned_data=cleaned_data,
             instance=dm_initial_review,
             model=DmInitialReviewMockModel,
@@ -175,7 +161,7 @@ class InitialReviewTests(TestCaseMixin):
             "med_start_ago": "2y",
             "glucose_performed": YES,
         }
-        form_validator = self.get_form_validator_cls(DM)(
+        form_validator = self.get_form_validator_cls()(
             cleaned_data=cleaned_data,
             instance=dm_initial_review,
             model=DmInitialReviewMockModel,
@@ -202,7 +188,7 @@ class InitialReviewTests(TestCaseMixin):
         ]:
             cleaned_data.update(glucose_date=datetime.today() + rdelta)
             with self.subTest(rdelta=rdelta):
-                form_validator = self.get_form_validator_cls(DM)(
+                form_validator = self.get_form_validator_cls()(
                     cleaned_data=cleaned_data,
                     instance=dm_initial_review,
                     model=DmInitialReviewMockModel,
@@ -220,7 +206,7 @@ class InitialReviewTests(TestCaseMixin):
         ]:
             cleaned_data.update(glucose_date=datetime.today() + rdelta)
             with self.subTest(rdelta=rdelta):
-                form_validator = self.get_form_validator_cls(DM)(
+                form_validator = self.get_form_validator_cls()(
                     cleaned_data=cleaned_data,
                     instance=dm_initial_review,
                     model=DmInitialReviewMockModel,
