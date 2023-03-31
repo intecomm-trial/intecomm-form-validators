@@ -1,5 +1,5 @@
 from django import forms
-from edc_constants.constants import NO, OTHER, YES
+from edc_constants.constants import NO, OTHER, PENDING, YES
 from edc_crf.crf_form_validator_mixins import CrfFormValidatorMixin
 from edc_dx_review.utils import (
     raise_if_both_ago_and_actual_date,
@@ -78,14 +78,14 @@ class HivInitialReviewFormValidator(
                 )
 
     def validate_viral_load(self):
+        self.required_if(YES, PENDING, field="has_vl", field_required="drawn_date")
+        if self.cleaned_data.get("drawn_date") and self.dx_date:
+            if self.cleaned_data.get("drawn_date") < self.dx_date:
+                raise forms.ValidationError(
+                    {"drawn_date": "Invalid. Cannot be before HIV diagnosis."}
+                )
         self.required_if(YES, field="has_vl", field_required="vl")
         self.required_if(YES, field="has_vl", field_required="vl_quantifier")
-        self.required_if(YES, field="has_vl", field_required="vl_date")
-        if self.cleaned_data.get("vl_date") and self.dx_date:
-            if self.cleaned_data.get("vl_date") < self.dx_date:
-                raise forms.ValidationError(
-                    {"vl_date": "Invalid. Cannot be before HIV diagnosis."}
-                )
 
     def validate_cd4(self):
         self.required_if(YES, field="has_cd4", field_required="cd4")
