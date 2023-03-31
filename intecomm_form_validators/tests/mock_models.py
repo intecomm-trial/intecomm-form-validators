@@ -84,4 +84,26 @@ class SubjectVisitMockModel(MockModel):
         self.appointment = appointment
         self.visit_schedule_name = appointment.visit_schedule_name
         self.schedule_name = appointment.schedule_name
+        self.report_datetime = appointment.appt_datetime
         self._meta.label_lower = "intecomm_subject.subjectvisit"
+
+
+class DmInitialReviewMockModel(MockModel):
+    def __init__(self, *args, **kwargs):
+        kwargs["mock_name"] = "DmInitialReview"
+        super().__init__(*args, **kwargs)
+        self._meta.label_lower = "intecomm_subject.dminitialreview"
+
+
+class HivInitialReviewMockModel(MockModel):
+    def __init__(self, *args, **kwargs):
+        kwargs["mock_name"] = "HivInitialReview"
+        super().__init__(*args, **kwargs)
+        self._meta.label_lower = "intecomm_subject.hivinitialreview"
+
+
+class HtnInitialReviewMockModel(MockModel):
+    def __init__(self, *args, **kwargs):
+        kwargs["mock_name"] = "HtnInitialReview"
+        super().__init__(*args, **kwargs)
+        self._meta.label_lower = "intecomm_subject.htninitialreview"

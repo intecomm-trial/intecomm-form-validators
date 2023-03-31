@@ -61,15 +61,24 @@ def verify_patient_group_ratio_raise(
     outofrange = False
     raise_on_outofrange = True if raise_on_outofrange is None else raise_on_outofrange
     for patient_log in patients:
-        if patient_log.conditions.filter(name__in=[DM, HTN]).exists():
-            ncd += 1.0
-        if patient_log.conditions.filter(name__in=[HIV]).exists():
-            hiv += 1.0
+        if patient_log.conditions.all().count() == 1:
+            if (
+                patient_log.conditions.filter(name__in=[HTN, DM])
+                .exclude(name__in=[HIV])
+                .exists()
+            ):
+                ncd += 1.0
+            if (
+                patient_log.conditions.filter(name__in=[HIV])
+                .exclude(name__in=[HTN, DM])
+                .exists()
+            ):
+                hiv += 1.0
     if not ncd or not hiv:
         ratio = 0.0
     else:
         ratio = ncd / hiv
-    if not (2.0 <= ratio <= 2.7):
+    if not (2.0 <= ratio <= 2.8):
         outofrange = True
         if raise_on_outofrange:
             raise PatientGroupRatioError(
