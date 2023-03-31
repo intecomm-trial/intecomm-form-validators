@@ -23,6 +23,7 @@ class TestCaseMixin(TestCase):
         stable: bool | None = None,
         screen: bool | None = None,
         consent: bool | None = None,
+        site: str | None = None,
     ) -> list:
         """Returns a list of mock patient logs"""
         patients = []
@@ -31,31 +32,59 @@ class TestCaseMixin(TestCase):
         for i in range(0, ratio[0]):
             patients.append(
                 self.get_mock_patient(
-                    DM, i=i + 100, stable=stable, screen=screen, consent=consent
+                    DM,
+                    i=i + 100,
+                    stable=stable,
+                    screen=screen,
+                    consent=consent,
+                    site=site,
                 )
             )
         for i in range(0, ratio[1]):
             patients.append(
                 self.get_mock_patient(
-                    HTN, i=i + 200, stable=stable, screen=screen, consent=consent
+                    HTN,
+                    i=i + 200,
+                    stable=stable,
+                    screen=screen,
+                    consent=consent,
+                    site=site,
                 )
             )
         for i in range(0, ratio[2]):
             patients.append(
                 self.get_mock_patient(
-                    HIV, i=i + 300, stable=stable, screen=screen, consent=consent
+                    HIV,
+                    i=i + 300,
+                    stable=stable,
+                    screen=screen,
+                    consent=consent,
+                    site=site,
                 )
             )
         for i in range(0, ratio[3]):
             patients.append(
                 self.get_mock_patient(
-                    DM, HTN, i=i + 300, stable=stable, screen=screen, consent=consent
+                    DM,
+                    HTN,
+                    i=i + 300,
+                    stable=stable,
+                    screen=screen,
+                    consent=consent,
+                    site=site,
                 )
             )
         for i in range(0, ratio[4]):
             patients.append(
                 self.get_mock_patient(
-                    HIV, DM, HTN, i=i + 300, stable=stable, screen=screen, consent=consent
+                    HIV,
+                    DM,
+                    HTN,
+                    i=i + 300,
+                    stable=stable,
+                    screen=screen,
+                    consent=consent,
+                    site=site,
                 )
             )
         return patients
@@ -67,6 +96,7 @@ class TestCaseMixin(TestCase):
         stable: bool | None = None,
         screen: bool | None = None,
         consent: bool | None = None,
+        site: str | None = None,
     ):
         """Returns a mock patient log"""
         # conditions = [condition] if isinstance(condition, (str,)) else condition
@@ -81,6 +111,7 @@ class TestCaseMixin(TestCase):
             conditions=MockSet(
                 *[ConditionsMockModel(name=x) for x in conditions],
             ),
+            site=site,
         )
 
     @staticmethod
