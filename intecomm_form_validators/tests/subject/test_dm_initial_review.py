@@ -6,6 +6,8 @@ from unittest.mock import patch
 from dateutil.relativedelta import relativedelta
 from dateutil.utils import today
 from django import forms
+from django.test import tag
+from django_mock_queries.query import MockSet
 from edc_constants.constants import OTHER, YES
 from edc_dx_review.constants import DIET_LIFESTYLE, DRUGS, INSULIN
 from edc_reportable import MILLIMOLES_PER_LITER
@@ -15,6 +17,7 @@ from intecomm_form_validators.subject import DmInitialReviewFormValidator as DmB
 from ..mock_models import (
     AppointmentMockModel,
     DmInitialReviewMockModel,
+    DmTreatmentsMockModel,
     SubjectVisitMockModel,
 )
 from ..test_case_mixin import TestCaseMixin
@@ -53,7 +56,9 @@ class InitialReviewTests(TestCaseMixin):
                 cleaned_data = {
                     "subject_visit": subject_visit,
                     "dx_ago": "2y",
-                    "managed_by": managed_by,
+                    "managed_by": MockSet(DmTreatmentsMockModel(name=managed_by)).filter(
+                        name=managed_by
+                    ),
                 }
                 form_validator = self.get_form_validator_cls()(
                     cleaned_data=cleaned_data,
@@ -72,7 +77,9 @@ class InitialReviewTests(TestCaseMixin):
         cleaned_data = {
             "subject_visit": subject_visit,
             "dx_ago": "2y",
-            "managed_by": DIET_LIFESTYLE,
+            "managed_by": MockSet(DmTreatmentsMockModel(name=DIET_LIFESTYLE)).filter(
+                name=DIET_LIFESTYLE
+            ),
             "med_start_ago": "blah",
         }
         form_validator = self.get_form_validator_cls()(
@@ -92,7 +99,7 @@ class InitialReviewTests(TestCaseMixin):
         cleaned_data = {
             "subject_visit": subject_visit,
             "dx_ago": "2y",
-            "managed_by": OTHER,
+            "managed_by": MockSet(DmTreatmentsMockModel(name=OTHER)).filter(name=OTHER),
             "med_start_ago": None,
             "managed_by_other": None,
         }
@@ -105,6 +112,7 @@ class InitialReviewTests(TestCaseMixin):
             form_validator.validate()
         self.assertIn("managed_by_other", cm.exception.error_dict)
 
+    @tag("1")
     @patch("edc_dx_review.utils.raise_if_clinical_review_does_not_exist")
     def test_if_managed_by_drug_med_started_after_dx(self, mock_func):
         appointment = AppointmentMockModel()
@@ -114,7 +122,7 @@ class InitialReviewTests(TestCaseMixin):
             "subject_visit": subject_visit,
             "report_datetime": datetime.today(),
             "dx_ago": "2y",
-            "managed_by": DRUGS,
+            "managed_by": MockSet(DmTreatmentsMockModel(name=DRUGS)).filter(name=DRUGS),
             "med_start_ago": "3y",
         }
         form_validator = self.get_form_validator_cls()(
@@ -157,9 +165,11 @@ class InitialReviewTests(TestCaseMixin):
             "subject_visit": subject_visit,
             "report_datetime": datetime.today(),
             "dx_ago": "2y",
-            "managed_by": DRUGS,
+            "managed_by": MockSet(DmTreatmentsMockModel(name=DRUGS)).filter(name=DRUGS),
             "med_start_ago": "2y",
             "glucose_performed": YES,
+            "glucose_fasting": YES,
+            "glucose_date": None,
         }
         form_validator = self.get_form_validator_cls()(
             cleaned_data=cleaned_data,
@@ -174,9 +184,9 @@ class InitialReviewTests(TestCaseMixin):
             "subject_visit": subject_visit,
             "report_datetime": datetime.today(),
             "dx_ago": "2y",
-            "managed_by": DRUGS,
+            "managed_by": MockSet(DmTreatmentsMockModel(name=DRUGS)).filter(name=DRUGS),
             "med_start_ago": "2y",
-            "fasting": YES,
+            "glucose_fasting": YES,
             "glucose_performed": YES,
             "glucose_value": 8.3,
             "glucose_quantifier": "=",
