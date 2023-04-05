@@ -1,6 +1,7 @@
 from django.core.exceptions import ObjectDoesNotExist
 from edc_constants.constants import YES
 from edc_form_validators import FormValidator
+from edc_form_validators.base_form_validator import INVALID_ERROR
 from edc_screening.utils import get_subject_screening_model_cls
 
 from .patient_group_form_validator import INVALID_RANDOMIZE
@@ -14,6 +15,10 @@ class PatientLogFormValidator(FormValidator):
     def __init__(self, subject_screening=None, **kwargs) -> None:
         self._subject_screening = subject_screening
         super().__init__(**kwargs)
+
+    @property
+    def age_in_years(self) -> int | None:
+        return self.cleaned_data.get("age_in_years")
 
     def clean(self):
         if (
@@ -48,6 +53,9 @@ class PatientLogFormValidator(FormValidator):
                 "Patient has already screened. Heath Facility Identifier may not change",
                 INVALID_CHANGE_ALREADY_SCREENED,
             )
+
+        self.validate_age()
+
         if (
             self.subject_screening
             and self.cleaned_data.get("site")
@@ -115,3 +123,10 @@ class PatientLogFormValidator(FormValidator):
             except ObjectDoesNotExist:
                 self._subject_screening = None
         return self._subject_screening
+
+    def validate_age(self) -> None:
+        if self.age_in_years is not None and not (18 <= self.age_in_years < 110):
+            self.raise_validation_error(
+                {"age_in_years": "Invalid. Patient must be 18 years or older"},
+                INVALID_ERROR,
+            )
