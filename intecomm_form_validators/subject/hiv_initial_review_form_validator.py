@@ -1,10 +1,8 @@
 from django import forms
-from edc_constants.constants import NO, OTHER, YES
+from edc_constants.constants import NO, OTHER, PENDING, YES
 from edc_crf.crf_form_validator_mixins import CrfFormValidatorMixin
-from edc_dx_review.utils import (
-    raise_if_both_ago_and_actual_date,
-    raise_if_clinical_review_does_not_exist,
-)
+from edc_dx_review.medical_date import DxDate, MedicalDateError
+from edc_dx_review.utils import raise_if_clinical_review_does_not_exist
 from edc_form_validators import FormValidator
 from edc_model.utils import estimated_date_from_ago
 
@@ -13,10 +11,17 @@ class HivInitialReviewFormValidator(
     CrfFormValidatorMixin,
     FormValidator,
 ):
+    def __init__(self, **kwargs):
+        self.dx_date = None
+        super().__init__(**kwargs)
+
     def clean(self):
         raise_if_clinical_review_does_not_exist(self.cleaned_data.get("subject_visit"))
 
-        raise_if_both_ago_and_actual_date(self.cleaned_data)
+        try:
+            self.dx_date = DxDate(self.cleaned_data)
+        except MedicalDateError as e:
+            self.raise_validation_error(e.message_dict, e.code)
 
         self.applicable_if(YES, field="receives_care", field_applicable="clinic")
 
@@ -78,14 +83,14 @@ class HivInitialReviewFormValidator(
                 )
 
     def validate_viral_load(self):
+        self.required_if(YES, PENDING, field="has_vl", field_required="drawn_date")
+        if self.cleaned_data.get("drawn_date") and self.dx_date:
+            if self.cleaned_data.get("drawn_date") < self.dx_date:
+                raise forms.ValidationError(
+                    {"drawn_date": "Invalid. Cannot be before HIV diagnosis."}
+                )
         self.required_if(YES, field="has_vl", field_required="vl")
         self.required_if(YES, field="has_vl", field_required="vl_quantifier")
-        self.required_if(YES, field="has_vl", field_required="vl_date")
-        if self.cleaned_data.get("vl_date") and self.dx_date:
-            if self.cleaned_data.get("vl_date") < self.dx_date:
-                raise forms.ValidationError(
-                    {"vl_date": "Invalid. Cannot be before HIV diagnosis."}
-                )
 
     def validate_cd4(self):
         self.required_if(YES, field="has_cd4", field_required="cd4")
@@ -95,12 +100,6 @@ class HivInitialReviewFormValidator(
                 raise forms.ValidationError(
                     {"cd4_date": "Invalid. Cannot be before HIV diagnosis."}
                 )
-
-    @property
-    def dx_date(self):
-        if self.cleaned_data.get("dx_ago"):
-            return estimated_date_from_ago(cleaned_data=self.cleaned_data, ago_field="dx_ago")
-        return self.cleaned_data.get("dx_date")
 
     @property
     def arv_initiation_date(self):

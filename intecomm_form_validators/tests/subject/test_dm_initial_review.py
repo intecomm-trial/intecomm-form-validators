@@ -1,20 +1,23 @@
 from __future__ import annotations
 
-from datetime import datetime
 from unittest.mock import patch
 
 from dateutil.relativedelta import relativedelta
 from dateutil.utils import today
 from django import forms
+from django.test import tag
+from django_mock_queries.query import MockSet
 from edc_constants.constants import OTHER, YES
 from edc_dx_review.constants import DIET_LIFESTYLE, DRUGS, INSULIN
 from edc_reportable import MILLIMOLES_PER_LITER
+from edc_utils import get_utcnow
 
 from intecomm_form_validators.subject import DmInitialReviewFormValidator as DmBase
 
 from ..mock_models import (
     AppointmentMockModel,
     DmInitialReviewMockModel,
+    DmTreatmentsMockModel,
     SubjectVisitMockModel,
 )
 from ..test_case_mixin import TestCaseMixin
@@ -33,7 +36,12 @@ class InitialReviewTests(TestCaseMixin):
         appointment = AppointmentMockModel()
         subject_visit = SubjectVisitMockModel(appointment)
         dm_initial_review = DmInitialReviewMockModel()
-        cleaned_data = {"subject_visit": subject_visit, "dx_ago": "2y", "dx_date": today()}
+        cleaned_data = {
+            "subject_visit": subject_visit,
+            "report_datetime": get_utcnow(),
+            "dx_ago": "2y",
+            "dx_date": today(),
+        }
         form_validator = self.get_form_validator_cls()(
             cleaned_data=cleaned_data,
             instance=dm_initial_review,
@@ -52,8 +60,11 @@ class InitialReviewTests(TestCaseMixin):
             with self.subTest(managed_by=managed_by):
                 cleaned_data = {
                     "subject_visit": subject_visit,
+                    "report_datetime": get_utcnow(),
                     "dx_ago": "2y",
-                    "managed_by": managed_by,
+                    "managed_by": MockSet(DmTreatmentsMockModel(name=managed_by)).filter(
+                        name=managed_by
+                    ),
                 }
                 form_validator = self.get_form_validator_cls()(
                     cleaned_data=cleaned_data,
@@ -71,8 +82,11 @@ class InitialReviewTests(TestCaseMixin):
         dm_initial_review = DmInitialReviewMockModel()
         cleaned_data = {
             "subject_visit": subject_visit,
+            "report_datetime": get_utcnow(),
             "dx_ago": "2y",
-            "managed_by": DIET_LIFESTYLE,
+            "managed_by": MockSet(DmTreatmentsMockModel(name=DIET_LIFESTYLE)).filter(
+                name=DIET_LIFESTYLE
+            ),
             "med_start_ago": "blah",
         }
         form_validator = self.get_form_validator_cls()(
@@ -91,8 +105,9 @@ class InitialReviewTests(TestCaseMixin):
         dm_initial_review = DmInitialReviewMockModel()
         cleaned_data = {
             "subject_visit": subject_visit,
+            "report_datetime": get_utcnow(),
             "dx_ago": "2y",
-            "managed_by": OTHER,
+            "managed_by": MockSet(DmTreatmentsMockModel(name=OTHER)).filter(name=OTHER),
             "med_start_ago": None,
             "managed_by_other": None,
         }
@@ -112,9 +127,9 @@ class InitialReviewTests(TestCaseMixin):
         dm_initial_review = DmInitialReviewMockModel()
         cleaned_data = {
             "subject_visit": subject_visit,
-            "report_datetime": datetime.today(),
+            "report_datetime": get_utcnow(),
             "dx_ago": "2y",
-            "managed_by": DRUGS,
+            "managed_by": MockSet(DmTreatmentsMockModel(name=DRUGS)).filter(name=DRUGS),
             "med_start_ago": "3y",
         }
         form_validator = self.get_form_validator_cls()(
@@ -148,6 +163,7 @@ class InitialReviewTests(TestCaseMixin):
         except forms.ValidationError:
             self.fail("ValidationError unexpectedly raised")
 
+    @tag("1")
     @patch("edc_dx_review.utils.raise_if_clinical_review_does_not_exist")
     def test_glucose_tested_requires_date(self, mock_func):
         appointment = AppointmentMockModel()
@@ -155,11 +171,13 @@ class InitialReviewTests(TestCaseMixin):
         dm_initial_review = DmInitialReviewMockModel()
         cleaned_data = {
             "subject_visit": subject_visit,
-            "report_datetime": datetime.today(),
+            "report_datetime": get_utcnow(),
             "dx_ago": "2y",
-            "managed_by": DRUGS,
+            "managed_by": MockSet(DmTreatmentsMockModel(name=DRUGS)).filter(name=DRUGS),
             "med_start_ago": "2y",
             "glucose_performed": YES,
+            "glucose_fasting": YES,
+            "glucose_date": None,
         }
         form_validator = self.get_form_validator_cls()(
             cleaned_data=cleaned_data,
@@ -172,11 +190,11 @@ class InitialReviewTests(TestCaseMixin):
 
         cleaned_data = {
             "subject_visit": subject_visit,
-            "report_datetime": datetime.today(),
+            "report_datetime": get_utcnow(),
             "dx_ago": "2y",
-            "managed_by": DRUGS,
+            "managed_by": MockSet(DmTreatmentsMockModel(name=DRUGS)).filter(name=DRUGS),
             "med_start_ago": "2y",
-            "fasting": YES,
+            "glucose_fasting": YES,
             "glucose_performed": YES,
             "glucose_value": 8.3,
             "glucose_quantifier": "=",
@@ -186,7 +204,7 @@ class InitialReviewTests(TestCaseMixin):
         for rdelta in [
             relativedelta(months=0),
         ]:
-            cleaned_data.update(glucose_date=datetime.today() + rdelta)
+            cleaned_data.update(glucose_date=get_utcnow() + rdelta)
             with self.subTest(rdelta=rdelta):
                 form_validator = self.get_form_validator_cls()(
                     cleaned_data=cleaned_data,
@@ -204,7 +222,7 @@ class InitialReviewTests(TestCaseMixin):
             relativedelta(months=2),
             relativedelta(months=1),
         ]:
-            cleaned_data.update(glucose_date=datetime.today() + rdelta)
+            cleaned_data.update(glucose_date=get_utcnow() + rdelta)
             with self.subTest(rdelta=rdelta):
                 form_validator = self.get_form_validator_cls()(
                     cleaned_data=cleaned_data,
