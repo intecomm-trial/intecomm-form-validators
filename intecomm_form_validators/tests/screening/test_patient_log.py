@@ -154,7 +154,6 @@ class PatientLogTests(TestCaseMixin):
         )
         self.assertIsNotNone(form_validator.subject_screening)
 
-    # @tag("1")
     # def test_attempt_to_change_patient_in_randomized_group_raises(self):
     #     patients = self.get_mock_patients(ratio=[10, 0, 4])
     #     save_patients = []
