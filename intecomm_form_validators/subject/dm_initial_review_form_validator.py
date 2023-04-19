@@ -24,14 +24,19 @@ class DmInitialReviewFormValidator(
         except MedicalDateError as e:
             self.raise_validation_error(e.message_dict, e.code)
 
-        self.required_if_m2m(
-            DRUGS,
-            INSULIN,
-            field="managed_by",
-            field_required="med_start_ago",
-        )
-
         self.m2m_other_specify(m2m_field="managed_by", field_other="managed_by_other")
+
+        selections = self.get_m2m_selected("managed_by")
+        on_medications = {DRUGS, INSULIN}.intersection(set(selections))
+        if on_medications and not (
+            self.cleaned_data.get("rx_init_date") or self.cleaned_data.get("rx_init_ago")
+        ):
+            self.raise_validation_error(
+                {"rx_init_date": "This field is required (or the below)."},
+                INVALID_ERROR,
+            )
+        self.not_required_if_true(not on_medications, "rx_init_date")
+        self.not_required_if_true(not on_medications, "rx_init_ago")
 
         try:
             RxDate(self.cleaned_data, reference_date=dx_date)

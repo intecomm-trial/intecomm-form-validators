@@ -51,7 +51,7 @@ class InitialReviewTests(TestCaseMixin):
         self.assertIn("dx_ago", cm.exception.error_dict)
 
     @patch("edc_dx_review.utils.raise_if_clinical_review_does_not_exist")
-    def test_if_managed_by_drugs_required_med_start_ago(self, mock_func):
+    def test_if_managed_by_drugs_requires_rx_init_date(self, mock_func):
         appointment = AppointmentMockModel()
         subject_visit = SubjectVisitMockModel(appointment)
         dm_initial_review = DmInitialReviewMockModel()
@@ -72,7 +72,7 @@ class InitialReviewTests(TestCaseMixin):
                 )
                 with self.assertRaises(forms.ValidationError) as cm:
                     form_validator.validate()
-                self.assertIn("med_start_ago", cm.exception.error_dict)
+                self.assertIn("rx_init_date", cm.exception.error_dict)
 
     @patch("edc_dx_review.utils.raise_if_clinical_review_does_not_exist")
     def test_if_managed_by_lifestyle(self, mock_func):
@@ -86,7 +86,7 @@ class InitialReviewTests(TestCaseMixin):
             "managed_by": MockSet(DmTreatmentsMockModel(name=DIET_LIFESTYLE)).filter(
                 name=DIET_LIFESTYLE
             ),
-            "med_start_ago": "blah",
+            "rx_init_ago": "blah",
         }
         form_validator = self.get_form_validator_cls()(
             cleaned_data=cleaned_data,
@@ -95,7 +95,7 @@ class InitialReviewTests(TestCaseMixin):
         )
         with self.assertRaises(forms.ValidationError) as cm:
             form_validator.validate()
-        self.assertIn("med_start_ago", cm.exception.error_dict)
+        self.assertIn("rx_init_ago", cm.exception.error_dict)
 
     @patch("edc_dx_review.utils.raise_if_clinical_review_does_not_exist")
     def test_if_managed_by_other(self, mock_func):
@@ -107,7 +107,7 @@ class InitialReviewTests(TestCaseMixin):
             "report_datetime": get_utcnow(),
             "dx_ago": "2y",
             "managed_by": MockSet(DmTreatmentsMockModel(name=OTHER)).filter(name=OTHER),
-            "med_start_ago": None,
+            "rx_init_ago": None,
             "managed_by_other": None,
         }
         form_validator = self.get_form_validator_cls()(
@@ -129,7 +129,7 @@ class InitialReviewTests(TestCaseMixin):
             "report_datetime": get_utcnow(),
             "dx_ago": "2y",
             "managed_by": MockSet(DmTreatmentsMockModel(name=DRUGS)).filter(name=DRUGS),
-            "med_start_ago": "3y",
+            "rx_init_ago": "3y",
         }
         form_validator = self.get_form_validator_cls()(
             cleaned_data=cleaned_data,
@@ -138,9 +138,9 @@ class InitialReviewTests(TestCaseMixin):
         )
         with self.assertRaises(forms.ValidationError) as cm:
             form_validator.validate()
-        self.assertIn("med_start_ago", cm.exception.error_dict)
+        self.assertIn("rx_init_ago", cm.exception.error_dict)
 
-        cleaned_data.update(med_start_ago="2y")
+        cleaned_data.update(rx_init_ago="2y")
         form_validator = self.get_form_validator_cls()(
             cleaned_data=cleaned_data,
             instance=dm_initial_review,
@@ -151,7 +151,7 @@ class InitialReviewTests(TestCaseMixin):
         except forms.ValidationError:
             self.fail("ValidationError unexpectedly raised")
 
-        cleaned_data.update(med_start_ago="1y")
+        cleaned_data.update(rx_init_ago="1y")
         form_validator = self.get_form_validator_cls()(
             cleaned_data=cleaned_data,
             instance=dm_initial_review,
@@ -172,7 +172,7 @@ class InitialReviewTests(TestCaseMixin):
             "report_datetime": get_utcnow(),
             "dx_ago": "2y",
             "managed_by": MockSet(DmTreatmentsMockModel(name=DRUGS)).filter(name=DRUGS),
-            "med_start_ago": "2y",
+            "rx_init_ago": "2y",
             "glucose_performed": YES,
             "glucose_fasting": YES,
             "glucose_date": None,
@@ -191,7 +191,7 @@ class InitialReviewTests(TestCaseMixin):
             "report_datetime": get_utcnow(),
             "dx_ago": "2y",
             "managed_by": MockSet(DmTreatmentsMockModel(name=DRUGS)).filter(name=DRUGS),
-            "med_start_ago": "2y",
+            "rx_init_ago": "2y",
             "glucose_fasting": YES,
             "glucose_performed": YES,
             "glucose_value": 8.3,

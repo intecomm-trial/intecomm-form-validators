@@ -27,46 +27,45 @@ class HivInitialReviewFormValidator(
 
         self.required_if(OTHER, field="clinic", field_required="clinic_other")
 
-        self.required_if(YES, field="receives_care", field_required="arv_initiated")
+        self.required_if(YES, field="receives_care", field_required="rx_init")
 
         self.validate_art_initiation_date()
 
-        self.required_if(YES, field="arv_initiated", field_required="has_vl")
+        self.required_if(YES, field="rx_init", field_required="has_vl")
         self.validate_viral_load()
 
-        self.required_if(YES, field="arv_initiated", field_required="has_cd4")
+        self.required_if(YES, field="rx_init", field_required="has_cd4")
         self.validate_cd4()
 
     def validate_art_initiation_date(self):
         self.not_required_if(
             NO,
-            field="arv_initiated",
-            field_required="arv_initiation_ago",
+            field="rx_init",
+            field_required="rx_init_date",
             inverse=False,
         )
         self.not_required_if(
             NO,
-            field="arv_initiated",
-            field_required="arv_initiation_actual_date",
+            field="rx_init",
+            field_required="rx_init_ago",
             inverse=False,
         )
 
-        if self.cleaned_data.get("art_initiated") == YES and not (
-            self.cleaned_data.get("arv_initiation_ago")
-            or self.cleaned_data.get("arv_initiation_actual_date")
+        if self.cleaned_data.get("rx_init") == YES and not (
+            self.cleaned_data.get("rx_init_ago") or self.cleaned_data.get("rx_init_date")
         ):
             raise forms.ValidationError(
-                {"arv_initiation_actual_date": "This field is required (or the above)."}
+                {"rx_init_date": "This field is required (or the below)."}
             )
 
         if (
-            self.cleaned_data.get("art_initiated") == YES
-            and self.cleaned_data.get("arv_initiation_ago")
-            and self.cleaned_data.get("arv_initiation_actual_date")
+            self.cleaned_data.get("rx_init") == YES
+            and self.cleaned_data.get("rx_init_ago")
+            and self.cleaned_data.get("rx_init_date")
         ):
             raise forms.ValidationError(
                 {
-                    "arv_initiation_ago": (
+                    "rx_init_ago": (
                         "This field is not required if the actual date is provided (below)."
                     )
                 }
@@ -75,8 +74,8 @@ class HivInitialReviewFormValidator(
         if self.arv_initiation_date and self.dx_date:
             if self.arv_initiation_date < self.dx_date:
                 field = self.which_field(
-                    ago_field="arv_initiation_ago",
-                    date_field="arv_initiation_actual_date",
+                    ago_field="rx_init_ago",
+                    date_field="rx_init_date",
                 )
                 raise forms.ValidationError(
                     {field: "Invalid. Cannot start ART before HIV diagnosis."}
@@ -103,11 +102,11 @@ class HivInitialReviewFormValidator(
 
     @property
     def arv_initiation_date(self):
-        if self.cleaned_data.get("arv_initiation_ago"):
+        if self.cleaned_data.get("rx_init_ago"):
             return estimated_date_from_ago(
-                cleaned_data=self.cleaned_data, ago_field="arv_initiation_ago"
+                cleaned_data=self.cleaned_data, ago_field="rx_init_ago"
             )
-        return self.cleaned_data.get("arv_initiation_actual_date")
+        return self.cleaned_data.get("rx_init_date")
 
     def which_field(self, ago_field=None, date_field=None):
         if self.cleaned_data.get(ago_field):
