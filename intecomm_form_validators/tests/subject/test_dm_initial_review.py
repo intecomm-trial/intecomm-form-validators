@@ -5,7 +5,6 @@ from unittest.mock import patch
 from dateutil.relativedelta import relativedelta
 from dateutil.utils import today
 from django import forms
-from django.test import tag
 from django_mock_queries.query import MockSet
 from edc_constants.constants import OTHER, YES
 from edc_dx_review.constants import DIET_LIFESTYLE, DRUGS, INSULIN
@@ -163,7 +162,6 @@ class InitialReviewTests(TestCaseMixin):
         except forms.ValidationError:
             self.fail("ValidationError unexpectedly raised")
 
-    @tag("1")
     @patch("edc_dx_review.utils.raise_if_clinical_review_does_not_exist")
     def test_glucose_tested_requires_date(self, mock_func):
         appointment = AppointmentMockModel()

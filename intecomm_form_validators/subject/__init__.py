@@ -11,6 +11,7 @@ from .hiv_review_form_validator import HivReviewFormValidator
 from .htn_initial_review_form_validator import HtnInitialReviewFormValidator
 from .htn_review_form_validator import HtnReviewFormValidator
 from .medications_form_validator import MedicationsFormValidator
+from .next_appointment_form_validator import NextAppointmentFormValidator
 from .other_baseline_data_form_validator import OtherBaselineDataFormValidator
 from .social_harms_form_validator import SocialHarmsFormValidator
 from .vitals_form_validator import VitalsFormValidator
