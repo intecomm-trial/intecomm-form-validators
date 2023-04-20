@@ -14,4 +14,11 @@ class DrugRefillHivFormValidator(
         try:
             validate_total_days(self, return_in_days=self.cleaned_data.get("return_in_days"))
         except TotalDaysMismatch as e:
-            self.raise_validation_error({"__all__": str(e)}, TOTAL_DAYS_MISMATCH_ERROR)
+            self.raise_validation_error(
+                {
+                    "clinic_days": str(e),
+                    "club_days": str(e),
+                    "purchased_days": str(e),
+                },
+                TOTAL_DAYS_MISMATCH_ERROR,
+            )
