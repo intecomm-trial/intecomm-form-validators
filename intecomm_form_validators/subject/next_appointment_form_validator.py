@@ -31,6 +31,26 @@ class NextAppointmentFormValidator(CrfFormValidator):
                     {"appt_date": "Cannot be more than 6 months from report date"},
                     INVALID_ERROR,
                 )
+        self.validate_date_is_on_clinic_day()
+
+    @property
+    def integrated_clinic_days(self) -> list[int]:
+        if not self._integrated_clinic_days:
+            if self.cleaned_data.get("health_facility"):
+                self._integrated_clinic_days = self.cleaned_data.get(
+                    "health_facility"
+                ).clinic_days
+            # if not self._integrated_clinic_days:
+            #     site = self.cleaned_data.get("subject_visit").site
+            #     if s_obj := [s for s in all_sites.get("uganda") if s.site_id == site.id]:
+            #         self._integrated_clinic_days = s_obj[0].integrated_clinic_days
+            #     else:
+            #         self._integrated_clinic_days = [
+            #             s for s in all_sites.get("tanzania") if s.site_id == site.id
+            #         ][0].integrated_clinic_days
+        return self._integrated_clinic_days
+
+    def validate_date_is_on_clinic_day(self):
         if appt_date := self.cleaned_data.get("appt_date"):
             if appt_date.isoweekday() > 5:
                 day = "Saturday" if appt_date.isoweekday() == 6 else "Sunday"
@@ -55,20 +75,3 @@ class NextAppointmentFormValidator(CrfFormValidator):
                     },
                     INVALID_ERROR,
                 )
-
-    @property
-    def integrated_clinic_days(self) -> list[int]:
-        if not self._integrated_clinic_days:
-            if self.cleaned_data.get("health_facility"):
-                self._integrated_clinic_days = self.cleaned_data.get(
-                    "health_facility"
-                ).clinic_days
-            # if not self._integrated_clinic_days:
-            #     site = self.cleaned_data.get("subject_visit").site
-            #     if s_obj := [s for s in all_sites.get("uganda") if s.site_id == site.id]:
-            #         self._integrated_clinic_days = s_obj[0].integrated_clinic_days
-            #     else:
-            #         self._integrated_clinic_days = [
-            #             s for s in all_sites.get("tanzania") if s.site_id == site.id
-            #         ][0].integrated_clinic_days
-        return self._integrated_clinic_days

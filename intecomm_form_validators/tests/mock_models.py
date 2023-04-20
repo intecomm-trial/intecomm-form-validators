@@ -114,3 +114,10 @@ class DmTreatmentsMockModel(MockModel):
         kwargs["mock_name"] = "DmTreatments"
         super().__init__(*args, **kwargs)
         self._meta.label_lower = "intecomm_lists.dmtreatments"
+
+
+class HtnTreatmentsMockModel(MockModel):
+    def __init__(self, *args, **kwargs):
+        kwargs["mock_name"] = "HtnTreatments"
+        super().__init__(*args, **kwargs)
+        self._meta.label_lower = "intecomm_lists.htntreatments"
