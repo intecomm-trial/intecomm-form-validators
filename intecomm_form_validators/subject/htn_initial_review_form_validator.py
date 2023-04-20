@@ -21,7 +21,7 @@ class HtnInitialReviewFormValidator(
         self.required_if_m2m(
             DRUGS,
             field="managed_by",
-            field_required="med_start_ago",
+            field_required="rx_init_ago",
         )
 
         try:
