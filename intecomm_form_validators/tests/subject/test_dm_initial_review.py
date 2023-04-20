@@ -96,6 +96,7 @@ class InitialReviewTests(TestCaseMixin):
         with self.assertRaises(forms.ValidationError) as cm:
             form_validator.validate()
         self.assertIn("rx_init_ago", cm.exception.error_dict)
+        self.assertIn("This field is not required", str(cm.exception))
 
     @patch("edc_dx_review.utils.raise_if_clinical_review_does_not_exist")
     def test_if_managed_by_other(self, mock_func):
@@ -138,7 +139,7 @@ class InitialReviewTests(TestCaseMixin):
         )
         with self.assertRaises(forms.ValidationError) as cm:
             form_validator.validate()
-        self.assertIn("rx_init_ago", cm.exception.error_dict)
+        self.assertIn("Treatment date must be on or after", str(cm.exception))
 
         cleaned_data.update(rx_init_ago="2y")
         form_validator = self.get_form_validator_cls()(

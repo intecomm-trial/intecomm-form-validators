@@ -26,13 +26,6 @@ class DmInitialReviewFormValidator(
         except MedicalDateError as e:
             self.raise_validation_error(e.message_dict, e.code)
 
-        # self.required_if_m2m(
-        #     DRUGS,
-        #     INSULIN,
-        #     field="managed_by",
-        #     field_required="rx_init_ago",
-        # )
-
         if DRUGS in self.get_m2m_selected("managed_by") or INSULIN in self.get_m2m_selected(
             "managed_by"
         ):

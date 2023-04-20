@@ -32,9 +32,11 @@ class HivInitialReviewFormValidator(
         self.validate_rx_init_date()
 
         self.required_if(YES, field="rx_init", field_required="has_vl")
+
         self.validate_viral_load()
 
         self.required_if(YES, field="rx_init", field_required="has_cd4")
+
         self.validate_cd4()
 
     def validate_rx_init_date(self):
