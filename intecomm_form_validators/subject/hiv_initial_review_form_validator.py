@@ -27,7 +27,7 @@ class HivInitialReviewFormValidator(
 
         self.required_if(OTHER, field="clinic", field_required="clinic_other")
 
-        self.required_if(YES, field="receives_care", field_required="rx_init")
+        self.applicable_if(YES, field="receives_care", field_applicable="rx_init")
 
         self.validate_rx_init_date()
 
@@ -40,10 +40,20 @@ class HivInitialReviewFormValidator(
         self.validate_cd4()
 
     def validate_rx_init_date(self):
-        try:
-            self.rx_init_date = RxDate(self.cleaned_data, reference_date=self.dx_date)
-        except MedicalDateError as e:
-            self.raise_validation_error(e.message_dict, e.code)
+        if self.cleaned_data.get("rx_init") == YES:
+            try:
+                self.rx_init_date = RxDate(self.cleaned_data, reference_date=self.dx_date)
+            except MedicalDateError as e:
+                self.raise_validation_error(e.message_dict, e.code)
+        else:
+            self.not_required_if_true(
+                self.cleaned_data.get("rx_init_date"),
+                field="rx_init_date",
+            )
+            self.not_required_if_true(
+                self.cleaned_data.get("rx_init_ago"),
+                field="rx_init_ago",
+            )
 
     def validate_viral_load(self):
         self.required_if(YES, PENDING, field="has_vl", field_required="drawn_date")
