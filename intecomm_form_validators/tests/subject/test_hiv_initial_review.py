@@ -6,7 +6,7 @@ from unittest.mock import patch
 from dateutil.relativedelta import relativedelta
 from dateutil.utils import today
 from django import forms
-from edc_constants.constants import COMPLETE, NO, NOT_APPLICABLE, YES
+from edc_constants.constants import COMPLETE, EQ, NO, NOT_APPLICABLE, YES
 from edc_dx_review.constants import THIS_CLINIC
 from edc_utils import get_utcnow
 
@@ -52,8 +52,8 @@ class HivInitialReviewTests(TestCaseMixin):
             vl=None,
             vl_quantifier=NOT_APPLICABLE,
             has_cd4=NO,
-            cd4_date=None,
             cd4=None,
+            cd4_date=None,
             crf_status=COMPLETE,
             crf_status_comments="",
         )
@@ -526,3 +526,142 @@ class HivInitialReviewTests(TestCaseMixin):
             "This field is not required",
             str(cm.exception.error_dict.get("rx_init_ago")),
         )
+
+    def test_vl_drawn_date_before_hiv_dx_date_raises(self):
+        hiv_initial_review = HivInitialReviewMockModel()
+        cleaned_data = self.get_cleaned_data()
+        report_datetime = get_utcnow()
+        cleaned_data.update(
+            {
+                "report_datetime": get_utcnow(),
+                "dx_date": None,
+                "dx_ago": "2y",
+                "has_vl": YES,
+                "drawn_date": report_datetime.date() - relativedelta(years=2, days=1),
+                "vl": 200,
+                "vl_quantifier": EQ,
+            }
+        )
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=hiv_initial_review,
+            model=HivInitialReviewMockModel,
+        )
+        with self.assertRaises(forms.ValidationError) as cm:
+            form_validator.validate()
+        self.assertIn("drawn_date", cm.exception.error_dict)
+        self.assertIn(
+            "Invalid. Cannot be before HIV diagnosis.",
+            str(cm.exception.error_dict.get("drawn_date")),
+        )
+
+        cleaned_data.update({"drawn_date": report_datetime.date() - relativedelta(years=2)})
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=hiv_initial_review,
+            model=HivInitialReviewMockModel,
+        )
+        try:
+            form_validator.validate()
+        except forms.ValidationError as e:
+            self.fail(f"ValidationError unexpectedly raised. Got {e}")
+
+        cleaned_data.update(
+            {
+                "dx_date": report_datetime.date() - relativedelta(years=1),
+                "dx_ago": "",
+                "drawn_date": report_datetime.date() - relativedelta(years=1, days=1),
+            }
+        )
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=hiv_initial_review,
+            model=HivInitialReviewMockModel,
+        )
+        with self.assertRaises(forms.ValidationError) as cm:
+            form_validator.validate()
+        self.assertIn("drawn_date", cm.exception.error_dict)
+        self.assertIn(
+            "Invalid. Cannot be before HIV diagnosis.",
+            str(cm.exception.error_dict.get("drawn_date")),
+        )
+
+        cleaned_data.update({"drawn_date": report_datetime.date() - relativedelta(years=1)})
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=hiv_initial_review,
+            model=HivInitialReviewMockModel,
+        )
+        try:
+            form_validator.validate()
+        except forms.ValidationError as e:
+            self.fail(f"ValidationError unexpectedly raised. Got {e}")
+
+    def test_cd4_date_before_hiv_dx_date_raises(self):
+        hiv_initial_review = HivInitialReviewMockModel()
+        cleaned_data = self.get_cleaned_data()
+        report_datetime = get_utcnow()
+        cleaned_data.update(
+            {
+                "report_datetime": get_utcnow(),
+                "dx_date": None,
+                "dx_ago": "2y",
+                "has_cd4": YES,
+                "cd4": 100,
+                "cd4_date": report_datetime.date() - relativedelta(years=2, days=1),
+            }
+        )
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=hiv_initial_review,
+            model=HivInitialReviewMockModel,
+        )
+        with self.assertRaises(forms.ValidationError) as cm:
+            form_validator.validate()
+        self.assertIn("cd4_date", cm.exception.error_dict)
+        self.assertIn(
+            "Invalid. Cannot be before HIV diagnosis.",
+            str(cm.exception.error_dict.get("cd4_date")),
+        )
+
+        cleaned_data.update({"cd4_date": report_datetime.date() - relativedelta(years=2)})
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=hiv_initial_review,
+            model=HivInitialReviewMockModel,
+        )
+        try:
+            form_validator.validate()
+        except forms.ValidationError as e:
+            self.fail(f"ValidationError unexpectedly raised. Got {e}")
+
+        cleaned_data.update(
+            {
+                "dx_date": report_datetime.date() - relativedelta(years=1),
+                "dx_ago": "",
+                "cd4_date": report_datetime.date() - relativedelta(years=1, days=1),
+            }
+        )
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=hiv_initial_review,
+            model=HivInitialReviewMockModel,
+        )
+        with self.assertRaises(forms.ValidationError) as cm:
+            form_validator.validate()
+        self.assertIn("cd4_date", cm.exception.error_dict)
+        self.assertIn(
+            "Invalid. Cannot be before HIV diagnosis.",
+            str(cm.exception.error_dict.get("cd4_date")),
+        )
+
+        cleaned_data.update({"cd4_date": report_datetime.date() - relativedelta(years=1)})
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=hiv_initial_review,
+            model=HivInitialReviewMockModel,
+        )
+        try:
+            form_validator.validate()
+        except forms.ValidationError as e:
+            self.fail(f"ValidationError unexpectedly raised. Got {e}")
