@@ -9,6 +9,8 @@ class DmReviewFormValidator(
     CrfFormValidatorMixin,
     FormValidator,
 ):
+    prefix = "glucose"
+
     def clean(self):
         raise_if_clinical_review_does_not_exist(self.cleaned_data.get("subject_visit"))
         self.validate_glucose_test()

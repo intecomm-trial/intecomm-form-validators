@@ -6,7 +6,7 @@ from dateutil.relativedelta import relativedelta
 from dateutil.utils import today
 from django import forms
 from django_mock_queries.query import MockSet
-from edc_constants.constants import OTHER, YES
+from edc_constants.constants import NO, OTHER, YES
 from edc_dx_review.constants import DIET_LIFESTYLE, DRUGS, INSULIN
 from edc_reportable import MILLIMOLES_PER_LITER
 from edc_utils import get_utcnow
@@ -164,6 +164,55 @@ class InitialReviewTests(TestCaseMixin):
             self.fail("ValidationError unexpectedly raised")
 
     @patch("edc_dx_review.utils.raise_if_clinical_review_does_not_exist")
+    def test_glucose_not_tested_glucose_fasting_not_applicable(self, mock_func):
+        appointment = AppointmentMockModel()
+        subject_visit = SubjectVisitMockModel(appointment)
+        dm_initial_review = DmInitialReviewMockModel()
+        cleaned_data = {
+            "subject_visit": subject_visit,
+            "report_datetime": get_utcnow(),
+            "dx_ago": "2y",
+            "managed_by": MockSet(DmTreatmentsMockModel(name=DRUGS)).filter(name=DRUGS),
+            "rx_init_ago": "2y",
+            "glucose_performed": NO,
+            "glucose_fasting": YES,
+        }
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=dm_initial_review,
+            model=DmInitialReviewMockModel,
+        )
+        with self.assertRaises(forms.ValidationError) as cm:
+            form_validator.validate()
+        self.assertIn("glucose_fasting", cm.exception.error_dict)
+        self.assertIn("not applicable", str(cm.exception))
+
+    @patch("edc_dx_review.utils.raise_if_clinical_review_does_not_exist")
+    def test_glucose_tested_requires_fasting_duration(self, mock_func):
+        appointment = AppointmentMockModel()
+        subject_visit = SubjectVisitMockModel(appointment)
+        dm_initial_review = DmInitialReviewMockModel()
+        cleaned_data = {
+            "subject_visit": subject_visit,
+            "report_datetime": get_utcnow(),
+            "dx_ago": "2y",
+            "managed_by": MockSet(DmTreatmentsMockModel(name=DRUGS)).filter(name=DRUGS),
+            "rx_init_ago": "2y",
+            "glucose_performed": YES,
+            "glucose_fasting": YES,
+            "glucose_fasting_duration_str": None,
+            "glucose_date": None,
+        }
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=dm_initial_review,
+            model=DmInitialReviewMockModel,
+        )
+        with self.assertRaises(forms.ValidationError) as cm:
+            form_validator.validate()
+        self.assertIn("glucose_fasting_duration_str", cm.exception.error_dict)
+
+    @patch("edc_dx_review.utils.raise_if_clinical_review_does_not_exist")
     def test_glucose_tested_requires_date(self, mock_func):
         appointment = AppointmentMockModel()
         subject_visit = SubjectVisitMockModel(appointment)
@@ -176,6 +225,7 @@ class InitialReviewTests(TestCaseMixin):
             "rx_init_ago": "2y",
             "glucose_performed": YES,
             "glucose_fasting": YES,
+            "glucose_fasting_duration_str": "8h",
             "glucose_date": None,
         }
         form_validator = self.get_form_validator_cls()(
@@ -194,6 +244,7 @@ class InitialReviewTests(TestCaseMixin):
             "managed_by": MockSet(DmTreatmentsMockModel(name=DRUGS)).filter(name=DRUGS),
             "rx_init_ago": "2y",
             "glucose_fasting": YES,
+            "glucose_fasting_duration_str": "8h",
             "glucose_performed": YES,
             "glucose_value": 8.3,
             "glucose_quantifier": "=",
