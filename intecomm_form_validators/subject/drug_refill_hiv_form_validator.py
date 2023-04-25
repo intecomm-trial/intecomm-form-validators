@@ -1,4 +1,5 @@
 from edc_crf.crf_form_validator_mixins import CrfFormValidatorMixin
+from edc_dx_review.utils import medications_exists_or_raise
 from edc_form_validators import FormValidator
 from edc_rx.utils import TotalDaysMismatch, validate_total_days
 
@@ -11,6 +12,10 @@ class DrugRefillHivFormValidator(
     DrugRefillFormValidatorMixin, CrfFormValidatorMixin, FormValidator
 ):
     def clean(self):
+        medications_exists_or_raise(self.cleaned_data.get("subject_visit"))
+        self.validate_rx_as_fk()
+        self.validate_modifications()
+
         try:
             validate_total_days(self, return_in_days=self.cleaned_data.get("return_in_days"))
         except TotalDaysMismatch as e:
