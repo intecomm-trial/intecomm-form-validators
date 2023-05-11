@@ -10,6 +10,8 @@ INVALID_DURATION_IN_CARE = "invalid_duration_in_care"
 
 class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormValidator):
     def clean(self):
+        if not self.patient_log:
+            self.raise_validation_error("Select a Patient log")
         self.validate_stable_in_care_on_patient_log()
         self.validate_health_talks_on_patient_log()
         self.get_consent_for_period_or_raise()
