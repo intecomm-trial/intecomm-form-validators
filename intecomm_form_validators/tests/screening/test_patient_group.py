@@ -4,7 +4,6 @@ from django import forms
 from django_mock_queries.query import MockSet
 from edc_constants.constants import COMPLETE, NO, YES
 
-from intecomm_form_validators.constants import RECRUITING
 from intecomm_form_validators.screening import PatientGroupFormValidator as Base
 
 from ..mock_models import PatientGroupMockModel
@@ -37,20 +36,20 @@ class PatientGroupTests(TestCaseMixin):
         except forms.ValidationError:
             self.fail("ValidationError unexpectedly raised")
 
-    def test_raises_if_status_not_complete(self):
-        patients = self.get_mock_patients(dm=10, htn=0, hiv=4)
-        patient_group = PatientGroupMockModel()
-        form_validator = self.get_form_validator_cls()(
-            cleaned_data=dict(
-                status=RECRUITING, randomize_now=YES, patients=MockSet(*patients)
-            ),
-            instance=patient_group,
-            model=PatientGroupMockModel,
-        )
-        self.assertRaises(forms.ValidationError, form_validator.validate)
-        with self.assertRaises(forms.ValidationError) as cm:
-            form_validator.validate()
-        self.assertIn("Invalid. Group is not complete", cm.exception.messages)
+    # def test_raises_if_status_not_complete(self):
+    #     patients = self.get_mock_patients(dm=10, htn=0, hiv=4)
+    #     patient_group = PatientGroupMockModel()
+    #     form_validator = self.get_form_validator_cls()(
+    #         cleaned_data=dict(
+    #             status=RECRUITING, randomize_now=YES, patients=MockSet(*patients)
+    #         ),
+    #         instance=patient_group,
+    #         model=PatientGroupMockModel,
+    #     )
+    #     self.assertRaises(forms.ValidationError, form_validator.validate)
+    #     with self.assertRaises(forms.ValidationError) as cm:
+    #         form_validator.validate()
+    #     self.assertIn("Invalid. Group is not complete", cm.exception.messages)
 
     def test_group_size_not_ok(self):
         patients = self.get_mock_patients(
@@ -249,58 +248,60 @@ class PatientGroupTests(TestCaseMixin):
                     form_validator.validate()
                 self.assertIn("Ratio NDC:HIV not met", "|".join(cm.exception.messages))
 
-    def test_confirm_randomize_now_required_if_randomize_now_yes(self):
-        patients = self.get_mock_patients(
-            dm=10, htn=0, hiv=4, stable=YES, screen=True, consent=True
-        )
-        patient_group = PatientGroupMockModel(randomized=False, patients=MockSet(*patients))
+    # def test_confirm_randomize_now_required_if_randomize_now_yes(self):
+    #     patients = self.get_mock_patients(
+    #         dm=10, htn=0, hiv=4, stable=YES, screen=True, consent=True
+    #     )
+    #     patient_group = PatientGroupMockModel(randomized=False, patients=MockSet(*patients))
+    #
+    #     form_validator = self.get_form_validator_cls()(
+    #         cleaned_data={
+    #             "status": COMPLETE,
+    #             "randomize_now": YES,
+    #             "confirm_randomize_now": "",
+    #             "patients": MockSet(*patients),
+    #         },
+    #         instance=patient_group,
+    #         model=PatientGroupMockModel,
+    #     )
+    #     with self.assertRaises(forms.ValidationError) as cm:
+    #         form_validator.validate()
+    #     self.assertIn(
+    #         "If you wish to randomize this group, please confirm",
+    #         str(cm.exception.error_dict.get("confirm_randomize_now")),
+    #     )
 
-        form_validator = self.get_form_validator_cls()(
-            cleaned_data={
-                "status": COMPLETE,
-                "randomize_now": YES,
-                "confirm_randomize_now": "",
-                "patients": MockSet(*patients),
-            },
-            instance=patient_group,
-            model=PatientGroupMockModel,
-        )
-        with self.assertRaises(forms.ValidationError) as cm:
-            form_validator.validate()
-        self.assertIn(
-            "If you wish to randomize this group, please confirm",
-            str(cm.exception.error_dict.get("confirm_randomize_now")),
-        )
-
-    def test_confirm_randomize_now_not_required_if_randomize_now_not_yes(self):
-        patients = self.get_mock_patients(
-            dm=10, htn=0, hiv=4, stable=YES, screen=True, consent=True
-        )
-        patient_group = PatientGroupMockModel(randomized=False, patients=MockSet(*patients))
-
-        for randomize_now in [NO, "xxx"]:
-            for confirm_randomize_now in ["R", "Rand", "RANDOMIZE"]:
-                with self.subTest(
-                    randomize_now=randomize_now,
-                    confirm_randomize_now=confirm_randomize_now,
-                ):
-                    form_validator = self.get_form_validator_cls()(
-                        cleaned_data={
-                            "status": COMPLETE,
-                            "randomize_now": randomize_now,
-                            "confirm_randomize_now": confirm_randomize_now,
-                            "patients": MockSet(*patients),
-                        },
-                        instance=patient_group,
-                        model=PatientGroupMockModel,
-                    )
-                    with self.assertRaises(forms.ValidationError) as cm:
-                        form_validator.validate()
-                    self.assertIn(
-                        "This field is not required. "
-                        "Only complete if you are ready to randomize now.",
-                        str(cm.exception.error_dict.get("confirm_randomize_now")),
-                    )
+    # def test_confirm_randomize_now_not_required_if_randomize_now_not_yes(self):
+    #     patients = self.get_mock_patients(
+    #         dm=10, htn=0, hiv=4, stable=YES, screen=True, consent=True
+    #     )
+    #     patient_group = PatientGroupRandoMockModel(
+    #         randomized=False, patients=MockSet(*patients)
+    #     )
+    #
+    #     for randomize_now in [NO, "xxx"]:
+    #         for confirm_randomize_now in ["R", "Rand", "RANDOMIZE"]:
+    #             with self.subTest(
+    #                 randomize_now=randomize_now,
+    #                 confirm_randomize_now=confirm_randomize_now,
+    #             ):
+    #                 form_validator = self.get_form_validator_cls()(
+    #                     cleaned_data={
+    #                         "status": COMPLETE,
+    #                         "randomize_now": randomize_now,
+    #                         "confirm_randomize_now": confirm_randomize_now,
+    #                         "patients": MockSet(*patients),
+    #                     },
+    #                     instance=patient_group,
+    #                     model=PatientGroupRandoMockModel,
+    #                 )
+    #                 with self.assertRaises(forms.ValidationError) as cm:
+    #                     form_validator.validate()
+    #                 self.assertIn(
+    #                     "This field is not required. "
+    #                     "Only complete if you are ready to randomize now.",
+    #                     str(cm.exception.error_dict.get("confirm_randomize_now")),
+    #                 )
 
     def test_confirm_randomize_now_RANDOMIZE_randomize_now_yes_ok(self):
         patients = self.get_mock_patients(

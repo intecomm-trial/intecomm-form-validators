@@ -32,6 +32,27 @@ class PatientGroupMockModel(MockModel):
         pass
 
 
+class PatientGroupRandoMockModel(MockModel):
+    def __init__(self, *args, **kwargs):
+        kwargs["mock_name"] = "PatientGroupRando"
+        super().__init__(*args, **kwargs)
+        self._meta.label_lower = "intecomm_screening.patientgrouprando"
+        self.user_created = "jasper"
+        self.user_modified = "jasper"
+
+    def __str__(self):
+        return str(self.name)
+
+    def get_absolute_url(self) -> str:
+        return "absolute_url"
+
+    def get_changelist_url(self, search_term=None) -> str:
+        return "changelist_url"
+
+    def refresh_from_db(self):
+        pass
+
+
 class PatientLogMockModel(MockModel):
     def __init__(self, *args, **kwargs):
         kwargs["mock_name"] = "PatientLog"
