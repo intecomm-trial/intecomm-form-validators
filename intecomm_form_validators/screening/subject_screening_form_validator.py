@@ -15,6 +15,7 @@ class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormVali
         self.validate_stable_in_care_on_patient_log()
         self.validate_health_talks_on_patient_log()
         self.get_consent_for_period_or_raise()
+        self.validate_initials_against_patient_log()
         self.validate_gender_against_patient_log()
         self.validate_age_in_years_against_patient_log()
 
@@ -102,6 +103,19 @@ class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormVali
                     "age_in_years": (
                         f"Invalid. Expected {self.patient_log.age_in_years}. "
                         "See Patient Log."
+                    )
+                },
+                INVALID_ERROR,
+            )
+
+        pass
+
+    def validate_initials_against_patient_log(self):
+        if self.cleaned_data.get("initials") != self.patient_log.initials:
+            self.raise_validation_error(
+                {
+                    "initials": (
+                        f"Invalid. Expected {self.patient_log.initials}. See Patient Log."
                     )
                 },
                 INVALID_ERROR,
