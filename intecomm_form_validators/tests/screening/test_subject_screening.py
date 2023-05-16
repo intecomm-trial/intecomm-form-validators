@@ -104,6 +104,34 @@ class SubjectScreeningTests(TestCase):
             form_validator.validate()
         self.assertIn("Invalid. Expected FEMALE", "|".join(cm.exception.messages))
 
+    def test_initials(self):
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data={
+                "initials": "MM",
+                "gender": MALE,
+                "patient_log": self.patient_log(gender=MALE, initials="MM"),
+            },
+            instance=SubjectScreeningMockModel(),
+            model=SubjectScreeningMockModel,
+        )
+        try:
+            form_validator.validate()
+        except forms.ValidationError as e:
+            self.fail(f"ValidationError unexpectedly raised. Got {e}")
+
+    def test_initials_not_matching(self):
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data={
+                "initials": "MM",
+                "patient_log": self.patient_log(gender=FEMALE, initials="AA"),
+            },
+            instance=SubjectScreeningMockModel(),
+            model=SubjectScreeningMockModel,
+        )
+        with self.assertRaises(forms.ValidationError) as cm:
+            form_validator.validate()
+        self.assertIn("Invalid. Expected AA", "|".join(cm.exception.messages))
+
     def test_consent_ability(self):
         form_validator = self.get_form_validator_cls()(
             cleaned_data={
