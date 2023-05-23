@@ -16,7 +16,6 @@ from .subject import (
     DrugRefillDmFormValidator,
     DrugRefillHivFormValidator,
     DrugRefillHtnFormValidator,
-    HealthEconomicsFormValidator,
     HivReviewFormValidator,
     HtnReviewFormValidator,
     SocialHarmsFormValidator,
