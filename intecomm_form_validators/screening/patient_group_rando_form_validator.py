@@ -11,6 +11,8 @@ INVALID_STATUS_NOT_COMPLETE = "INVALID_STATUS_NOT_COMPLETE"
 class PatientGroupRandoFormValidator(FormValidator):
     def clean(self):
         self.block_changes_if_already_randomized()
+        self.block_if_patient_in_multiple_groups()
+        self.block_if_patient_already_randomized()
         if not self.cleaned_data.get("name"):
             raise self.raise_validation_error(
                 {"name": "This field is required"}, INVALID_ERROR
@@ -54,3 +56,20 @@ class PatientGroupRandoFormValidator(FormValidator):
             self.raise_validation_error(
                 "A randomized group may not be changed", INVALID_RANDOMIZE
             )
+
+    def block_if_patient_in_multiple_groups(self):
+        for obj in self.instance.patients.all():
+            groups = [o.name for o in obj.patientgroup_set.all()]
+            if len(groups) > 1:
+                self.raise_validation_error(
+                    f"Patient is in more than one group. See {obj.subject_identifier}. "
+                    f"Got {' '.join(groups)}."
+                )
+
+    def block_if_patient_already_randomized(self):
+        for obj in self.instance.patients.all():
+            if obj.group_identifier:
+                self.raise_validation_error(
+                    "Patient is already in a randomized group. "
+                    f"Got {obj.subject_identifier} is in group {obj.group_identifier}"
+                )
