@@ -46,3 +46,7 @@ class HealthEconomicsIncomeFormValidator(
                 field=f"{fld}_value_known",
                 field_required=f"{fld}_value",
             )
+
+        self.validate_other_specify(field="external_remittance_currency")
+        self.required_if(YES, field="more_sources", field_required="more_sources_other")
+        self.required_if(YES, field="household_debt", field_required="household_debt_value")
