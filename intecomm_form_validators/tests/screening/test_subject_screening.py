@@ -56,6 +56,7 @@ class SubjectScreeningTests(TestCase):
             ),
             first_health_talk=NO,
             second_health_talk=NO,
+            screening_refusal_reason=None,
         )
         opts.update(**kwargs)
         return PatientLogMockModel(**opts)
@@ -83,6 +84,35 @@ class SubjectScreeningTests(TestCase):
             form_validator.validate()
         except forms.ValidationError as e:
             self.fail(f"ValidationError unexpectedly raised. Got {e}")
+
+    def test_unwilling_to_screen_in_patient_log_raises(self):
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data={
+                "patient_log": self.patient_log(screening_refusal_reason="dont_have_time"),
+            },
+            instance=SubjectScreeningMockModel(),
+            model=SubjectScreeningMockModel,
+        )
+        with self.assertRaises(forms.ValidationError) as cm:
+            form_validator.validate()
+        self.assertIn(
+            "Invalid. Patient is unwilling to screen. See patient log for ",
+            "|".join(cm.exception.messages),
+        )
+
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data={
+                "patient_log": self.patient_log(screening_refusal_reason=None),
+            },
+            instance=SubjectScreeningMockModel(),
+            model=SubjectScreeningMockModel,
+        )
+        with self.assertRaises(forms.ValidationError) as cm:
+            form_validator.validate()
+        self.assertNotIn(
+            "Invalid. Patient is unwilling to screen. See patient log for ",
+            "|".join(cm.exception.messages),
+        )
 
     def test_gender(self):
         form_validator = self.get_form_validator_cls()(
