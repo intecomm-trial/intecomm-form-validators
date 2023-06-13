@@ -12,6 +12,7 @@ class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormVali
     def clean(self):
         if not self.patient_log:
             self.raise_validation_error("Select a Patient log")
+        self.validate_screening_willingness_on_patient_log()
         self.validate_stable_in_care_on_patient_log()
         self.validate_health_talks_on_patient_log()
         self.get_consent_for_period_or_raise()
@@ -45,29 +46,27 @@ class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormVali
 
         self.validate_suitability_for_study()
 
-    def validate_stable_in_care_on_patient_log(self):
-        if self.patient_log.stable != YES:
-            link = (
-                f'<a href="{self.patient_log.get_changelist_url()}?'
-                f'q={str(self.patient_log.id)}">{self.patient_log}</a>'
-            )
+    def validate_screening_willingness_on_patient_log(self):
+        if self.patient_log.screening_refusal_reason:
             errmsg = format_html(
-                "Invalid. Patient is not known to be stable and in-care. "
-                f"See patient log for {link}."
+                "Invalid. Patient is unwilling to screen. "
+                f"See patient log for {self.patient_log_link}."
             )
             self.raise_validation_error(errmsg, error_code=INVALID_ERROR)
 
-        pass
+    def validate_stable_in_care_on_patient_log(self):
+        if self.patient_log.stable != YES:
+            errmsg = format_html(
+                "Invalid. Patient is not known to be stable and in-care. "
+                f"See patient log for {self.patient_log_link}."
+            )
+            self.raise_validation_error(errmsg, error_code=INVALID_ERROR)
 
     def validate_health_talks_on_patient_log(self) -> bool:
         if self.patient_log.first_health_talk not in [YES, NO]:
-            link = (
-                f'<a href="{self.patient_log.get_changelist_url()}?'
-                f'q={str(self.patient_log.id)}">{self.patient_log}</a>'
-            )
             errmsg = format_html(
                 "Invalid. Has patient attended the first health talk? "
-                f"See patient log for {link}."
+                f"See patient log for {self.patient_log_link}."
             )
             self.raise_validation_error(errmsg, error_code=INVALID_ERROR)
         elif self.patient_log.second_health_talk not in [YES, NO]:
@@ -88,7 +87,7 @@ class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormVali
                 {
                     "gender": (
                         f"Invalid. Expected {self.patient_log.get_gender_display()}. "
-                        "See Patient Log."
+                        f"See patient log for {self.patient_log_link}."
                     )
                 },
                 INVALID_ERROR,
@@ -212,3 +211,10 @@ class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormVali
         if patient_log := self.cleaned_data.get("patient_log"):
             return patient_log
         return self.instance.patient_log
+
+    @property
+    def patient_log_link(self):
+        return (
+            f'<a href="{self.patient_log.get_changelist_url()}?'
+            f'q={str(self.patient_log.id)}">{self.patient_log}</a>'
+        )
