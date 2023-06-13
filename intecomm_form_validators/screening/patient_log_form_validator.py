@@ -91,6 +91,10 @@ class PatientLogFormValidator(FormValidator):
         self.required_if(
             YES, field="second_health_talk", field_required="second_health_talk_date"
         )
+        self.validate_other_specify(
+            field="screening_refusal_reason",
+            other_specify_field="screening_refusal_reason_other",
+        )
         # self.validate_group_changes()
 
     # def validate_group_changes(self):
