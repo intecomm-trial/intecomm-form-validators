@@ -19,7 +19,10 @@ class SocialHarmsTests(TestCaseMixin):
 
         return SocialHarmsFormValidator
 
-    @patch("edc_dx_review.utils.raise_if_clinical_review_does_not_exist")
+    @patch(
+        "intecomm_form_validators.subject.social_harms_form_validator."
+        "raise_if_clinical_review_does_not_exist"
+    )
     def test_ok(self, mock_func):
         social_harms = SocialHarmsMockModel()
         cleaned_data = {
