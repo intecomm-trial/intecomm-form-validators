@@ -30,7 +30,10 @@ class InitialReviewTests(TestCaseMixin):
 
         return DmInitialReviewFormValidator
 
-    @patch("edc_dx_review.utils.raise_if_clinical_review_does_not_exist")
+    @patch(
+        "intecomm_form_validators.subject.dm_initial_review_form_validator."
+        "raise_if_clinical_review_does_not_exist"
+    )
     def test_cannot_enter_ago_and_exact_date(self, mock_func):
         appointment = AppointmentMockModel()
         subject_visit = SubjectVisitMockModel(appointment)
@@ -50,7 +53,10 @@ class InitialReviewTests(TestCaseMixin):
             form_validator.validate()
         self.assertIn("dx_ago", cm.exception.error_dict)
 
-    @patch("edc_dx_review.utils.raise_if_clinical_review_does_not_exist")
+    @patch(
+        "intecomm_form_validators.subject.dm_initial_review_form_validator."
+        "raise_if_clinical_review_does_not_exist"
+    )
     def test_if_managed_by_drugs_required_rx_init_ago(self, mock_func):
         appointment = AppointmentMockModel()
         subject_visit = SubjectVisitMockModel(appointment)
@@ -74,7 +80,10 @@ class InitialReviewTests(TestCaseMixin):
                     form_validator.validate()
                 self.assertIn("Complete the treatment date", str(cm.exception))
 
-    @patch("edc_dx_review.utils.raise_if_clinical_review_does_not_exist")
+    @patch(
+        "intecomm_form_validators.subject.dm_initial_review_form_validator."
+        "raise_if_clinical_review_does_not_exist"
+    )
     def test_if_managed_by_lifestyle(self, mock_func):
         appointment = AppointmentMockModel()
         subject_visit = SubjectVisitMockModel(appointment)
@@ -98,7 +107,10 @@ class InitialReviewTests(TestCaseMixin):
         self.assertIn("rx_init_ago", cm.exception.error_dict)
         self.assertIn("This field is not required", str(cm.exception))
 
-    @patch("edc_dx_review.utils.raise_if_clinical_review_does_not_exist")
+    @patch(
+        "intecomm_form_validators.subject.dm_initial_review_form_validator."
+        "raise_if_clinical_review_does_not_exist"
+    )
     def test_if_managed_by_other(self, mock_func):
         appointment = AppointmentMockModel()
         subject_visit = SubjectVisitMockModel(appointment)
@@ -120,7 +132,10 @@ class InitialReviewTests(TestCaseMixin):
             form_validator.validate()
         self.assertIn("managed_by_other", cm.exception.error_dict)
 
-    @patch("edc_dx_review.utils.raise_if_clinical_review_does_not_exist")
+    @patch(
+        "intecomm_form_validators.subject.dm_initial_review_form_validator."
+        "raise_if_clinical_review_does_not_exist"
+    )
     def test_if_managed_by_drug_med_started_after_dx(self, mock_func):
         appointment = AppointmentMockModel()
         subject_visit = SubjectVisitMockModel(appointment)
@@ -163,7 +178,10 @@ class InitialReviewTests(TestCaseMixin):
         except forms.ValidationError:
             self.fail("ValidationError unexpectedly raised")
 
-    @patch("edc_dx_review.utils.raise_if_clinical_review_does_not_exist")
+    @patch(
+        "intecomm_form_validators.subject.dm_initial_review_form_validator."
+        "raise_if_clinical_review_does_not_exist"
+    )
     def test_glucose_not_tested_glucose_fasting_not_applicable(self, mock_func):
         appointment = AppointmentMockModel()
         subject_visit = SubjectVisitMockModel(appointment)
@@ -187,7 +205,10 @@ class InitialReviewTests(TestCaseMixin):
         self.assertIn("glucose_fasting", cm.exception.error_dict)
         self.assertIn("not applicable", str(cm.exception))
 
-    @patch("edc_dx_review.utils.raise_if_clinical_review_does_not_exist")
+    @patch(
+        "intecomm_form_validators.subject.dm_initial_review_form_validator."
+        "raise_if_clinical_review_does_not_exist"
+    )
     def test_glucose_tested_requires_fasting_duration(self, mock_func):
         appointment = AppointmentMockModel()
         subject_visit = SubjectVisitMockModel(appointment)
@@ -212,7 +233,10 @@ class InitialReviewTests(TestCaseMixin):
             form_validator.validate()
         self.assertIn("glucose_fasting_duration_str", cm.exception.error_dict)
 
-    @patch("edc_dx_review.utils.raise_if_clinical_review_does_not_exist")
+    @patch(
+        "intecomm_form_validators.subject.dm_initial_review_form_validator."
+        "raise_if_clinical_review_does_not_exist"
+    )
     def test_glucose_tested_requires_date(self, mock_func):
         appointment = AppointmentMockModel()
         subject_visit = SubjectVisitMockModel(appointment)

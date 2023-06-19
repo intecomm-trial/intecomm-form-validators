@@ -37,7 +37,8 @@ class VitalsFormValidationTests(TestCaseMixin):
         self.mock_is_end_of_study = is_end_of_study_patcher.start()
 
         raise_missing_clinical_review_patcher = patch(
-            "edc_dx_review.utils.raise_if_clinical_review_does_not_exist"
+            "intecomm_form_validators.subject.vitals_form_validator."
+            "raise_if_clinical_review_does_not_exist"
         )
         self.addCleanup(raise_missing_clinical_review_patcher.stop)
         self.raise_missing_clinical_review = raise_missing_clinical_review_patcher.start()
