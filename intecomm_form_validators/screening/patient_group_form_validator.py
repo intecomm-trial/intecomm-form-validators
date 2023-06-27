@@ -9,6 +9,7 @@ from ..utils import (
     PatientNotConsentedError,
     PatientNotScreenedError,
     PatientNotStableError,
+    PatientUnwillingToScreenError,
     confirm_patient_group_size_or_raise,
     confirm_patients_stable_and_screened_and_consented_or_raise,
     get_group_size_for_ratio,
@@ -80,7 +81,12 @@ class PatientGroupFormValidator(FormValidator):
             confirm_patients_stable_and_screened_and_consented_or_raise(
                 patients=self.cleaned_data.get("patients") or self.instance.patients
             )
-        except (PatientNotStableError, PatientNotScreenedError, PatientNotConsentedError) as e:
+        except (
+            PatientNotStableError,
+            PatientNotScreenedError,
+            PatientNotConsentedError,
+            PatientUnwillingToScreenError,
+        ) as e:
             self.raise_validation_error({"__all__": str(e)}, INVALID_PATIENT)
 
     def verify_patient_group_ratio_raise(self):
