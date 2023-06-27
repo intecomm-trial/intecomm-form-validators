@@ -31,6 +31,10 @@ class PatientGroupSizeError(Exception):
     pass
 
 
+class PatientUnwillingToScreenError(Exception):
+    pass
+
+
 class PatientGroupMakeupError(Exception):
     pass
 
@@ -160,6 +164,9 @@ def confirm_patients_stable_and_screened_and_consented_or_raise(
                     f"See patient log for {link}."
                 )
                 raise PatientNotStableError(errmsg)
+            if patient_log.screening_refusal_reason:
+                errmsg = format_html(f"Patient reported as unwilling to screen. See {link}.")
+                raise PatientUnwillingToScreenError(errmsg)
             if not patient_log.screening_identifier:
                 errmsg = format_html(f"Patient has not screened for eligibility. See {link}.")
                 raise PatientNotScreenedError(errmsg)
