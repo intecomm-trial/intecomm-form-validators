@@ -1,8 +1,8 @@
 Changes
 =======
 
-[0.1.25]
---------
+0.1.25
+------
 - fix Hypertension Initial Review form incorrectly flagging medicine start date
   as required when not managed by drugs (i.e. managed by diet, lifestyle or other) (#624)
 - Subject Screening form
