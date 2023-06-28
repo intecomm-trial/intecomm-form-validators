@@ -1,10 +1,15 @@
 Changes
 =======
 
-[unreleased]
-------------
+[0.1.25]
+--------
 - fix Hypertension Initial Review form incorrectly flagging medicine start date
   as required when not managed by drugs (i.e. managed by diet, lifestyle or other) (#624)
+- Subject Screening form
+    - add validation to prevent those reported unwilling to screen in Patient Log, from screening
+    - use Patient Log link in errors referring to Patient Log
+- fix patches using raise_if_clinical_review_does_not_exist
+- replace raise_if_crf_review_does_not_exist with raise_if_crf_does_not_exist (to support edc 0.3.97, edc-crf 0.3.43)
 
 0.1.0
 -----
