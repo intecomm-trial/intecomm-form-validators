@@ -26,7 +26,8 @@ class HtnInitialReviewTests(TestCaseMixin):
     def setUp(self) -> None:
         super().setUp()
         raise_missing_clinical_review_patcher = patch(
-            "edc_dx_review.utils.raise_if_clinical_review_does_not_exist"
+            "intecomm_form_validators.subject.htn_initial_review_form_validator."
+            "raise_if_clinical_review_does_not_exist"
         )
         self.addCleanup(raise_missing_clinical_review_patcher.stop)
         self.raise_missing_clinical_review = raise_missing_clinical_review_patcher.start()
@@ -174,7 +175,7 @@ class HtnInitialReviewTests(TestCaseMixin):
             str(cm.exception.error_dict.get("dx_ago")),
         )
 
-    def test_if_managed_by_drugs_requires_rx_init_date(self):
+    def test_rx_init_date_required_if_managed_by_drugs(self):
         htn_initial_review = HtnInitialReviewMockModel()
         cleaned_data = self.get_cleaned_data()
         cleaned_data.update(
@@ -213,6 +214,144 @@ class HtnInitialReviewTests(TestCaseMixin):
         cleaned_data.update(
             {
                 "managed_by": MockSet(HtnTreatmentsMockModel(name=DRUGS)).filter(name=DRUGS),
+                "rx_init_date": get_utcnow() - relativedelta(days=7),
+                "rx_init_ago": "",
+            }
+        )
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=htn_initial_review,
+            model=HtnInitialReviewMockModel,
+        )
+        try:
+            form_validator.validate()
+        except forms.ValidationError as e:
+            self.fail(f"ValidationError unexpectedly raised. Got {e}")
+
+    def test_rx_init_date_not_required_if_managed_by_diet_lifestyle(self):
+        htn_initial_review = HtnInitialReviewMockModel()
+        cleaned_data = self.get_cleaned_data()
+        cleaned_data.update(
+            {
+                "managed_by": MockSet(HtnTreatmentsMockModel(name=DIET_LIFESTYLE)).filter(
+                    name=DIET_LIFESTYLE
+                ),
+                "rx_init_date": None,
+                "rx_init_ago": "1y",
+            }
+        )
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=htn_initial_review,
+            model=HtnInitialReviewMockModel,
+        )
+        with self.assertRaises(forms.ValidationError) as cm:
+            form_validator.validate()
+        self.assertNotIn("Complete the treatment date", str(cm.exception))
+        self.assertIn(
+            "This field is not required",
+            str(cm.exception.error_dict.get("rx_init_ago")),
+        )
+
+        cleaned_data.update(
+            {
+                "managed_by": MockSet(HtnTreatmentsMockModel(name=DIET_LIFESTYLE)).filter(
+                    name=DIET_LIFESTYLE
+                ),
+                "rx_init_date": get_utcnow() - relativedelta(days=7),
+                "rx_init_ago": "",
+            }
+        )
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=htn_initial_review,
+            model=HtnInitialReviewMockModel,
+        )
+        with self.assertRaises(forms.ValidationError) as cm:
+            form_validator.validate()
+        self.assertNotIn("Complete the treatment date", str(cm.exception))
+        self.assertIn(
+            "This field is not required",
+            str(cm.exception.error_dict.get("rx_init_date")),
+        )
+
+        cleaned_data.update(
+            {
+                "rx_init_date": None,
+                "rx_init_ago": "",
+            }
+        )
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=htn_initial_review,
+            model=HtnInitialReviewMockModel,
+        )
+        try:
+            form_validator.validate()
+        except forms.ValidationError as e:
+            self.fail(f"ValidationError unexpectedly raised. Got {e}")
+
+    def test_rx_init_date_with_managed_by_drugs_plus_another_ok(self):
+        htn_initial_review = HtnInitialReviewMockModel()
+        cleaned_data = self.get_cleaned_data()
+        cleaned_data.update(
+            {
+                "managed_by": MockSet(
+                    HtnTreatmentsMockModel(name=DRUGS),
+                    HtnTreatmentsMockModel(name=DIET_LIFESTYLE),
+                ),
+                "rx_init_date": None,
+                "rx_init_ago": "",
+            }
+        )
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=htn_initial_review,
+            model=HtnInitialReviewMockModel,
+        )
+        with self.assertRaises(forms.ValidationError) as cm:
+            form_validator.validate()
+        self.assertIn("Complete the treatment date.", str(cm.exception))
+
+        cleaned_data.update(
+            {
+                "managed_by": MockSet(
+                    HtnTreatmentsMockModel(name=DRUGS),
+                    HtnTreatmentsMockModel(name=DIET_LIFESTYLE),
+                    HtnTreatmentsMockModel(name=OTHER),
+                ),
+                "managed_by_other": "Some other management",
+                "rx_init_date": None,
+                "rx_init_ago": "",
+            }
+        )
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=htn_initial_review,
+            model=HtnInitialReviewMockModel,
+        )
+        with self.assertRaises(forms.ValidationError) as cm:
+            form_validator.validate()
+        self.assertIn("Complete the treatment date.", str(cm.exception))
+
+        cleaned_data.update(
+            {
+                "rx_init_date": None,
+                "rx_init_ago": "14d",
+            }
+        )
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data=cleaned_data,
+            instance=htn_initial_review,
+            model=HtnInitialReviewMockModel,
+        )
+        try:
+            form_validator.validate()
+        except forms.ValidationError as e:
+            self.fail(f"ValidationError unexpectedly raised. Got {e}")
+
+        cleaned_data.update(
+            {
                 "rx_init_date": get_utcnow() - relativedelta(days=7),
                 "rx_init_ago": "",
             }

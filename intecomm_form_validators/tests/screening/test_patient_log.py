@@ -3,7 +3,7 @@ from unittest.mock import patch
 from dateutil.relativedelta import relativedelta
 from django import forms
 from django_mock_queries.query import MockModel, MockSet
-from edc_constants.constants import FEMALE, MALE
+from edc_constants.constants import FEMALE, MALE, OTHER
 from edc_utils import get_utcnow
 
 from intecomm_form_validators.screening import PatientLogFormValidator as Base
@@ -200,6 +200,76 @@ class PatientLogTests(TestCaseMixin):
                 patient_log = PatientLogMockModel()
                 form_validator = self.get_form_validator_cls()(
                     cleaned_data={"age_in_years": age},
+                    instance=patient_log,
+                    model=PatientLogMockModel,
+                )
+                try:
+                    form_validator.validate()
+                except forms.ValidationError as e:
+                    self.fail(f"ValidationError unexpectedly raised. Got {e}")
+
+    def test_screening_refusal_reason_other_requires_other_field(self):
+        patient_log = PatientLogMockModel()
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data={
+                "screening_refusal_reason": OTHER,
+                "screening_refusal_reason_other": "",
+            },
+            instance=patient_log,
+            model=PatientLogMockModel,
+        )
+        with self.assertRaises(forms.ValidationError) as cm:
+            form_validator.validate()
+        self.assertIn("screening_refusal_reason_other", cm.exception.error_dict)
+        self.assertIn(
+            "This field is required.",
+            str(cm.exception.error_dict.get("screening_refusal_reason_other")),
+        )
+
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data={
+                "screening_refusal_reason": OTHER,
+                "screening_refusal_reason_other": "Some other reason",
+            },
+            instance=patient_log,
+            model=PatientLogMockModel,
+        )
+        try:
+            form_validator.validate()
+        except forms.ValidationError as e:
+            self.fail(f"ValidationError unexpectedly raised. Got {e}")
+
+    def test_screening_refusal_reason_not_other_does_not_require_other_field(self):
+        for answ in [
+            None,
+            "dont_have_time",
+            "must_consult_spouse",
+            "dont_want_to_join",
+            "need_to_think_about_it",
+        ]:
+            with self.subTest(answ=answ):
+                patient_log = PatientLogMockModel()
+                form_validator = self.get_form_validator_cls()(
+                    cleaned_data={
+                        "screening_refusal_reason": answ,
+                        "screening_refusal_reason_other": "Some other reason",
+                    },
+                    instance=patient_log,
+                    model=PatientLogMockModel,
+                )
+                with self.assertRaises(forms.ValidationError) as cm:
+                    form_validator.validate()
+                self.assertIn("screening_refusal_reason_other", cm.exception.error_dict)
+                self.assertIn(
+                    "This field is not required.",
+                    str(cm.exception.error_dict.get("screening_refusal_reason_other")),
+                )
+
+                form_validator = self.get_form_validator_cls()(
+                    cleaned_data={
+                        "screening_refusal_reason": answ,
+                        "screening_refusal_reason_other": "",
+                    },
                     instance=patient_log,
                     model=PatientLogMockModel,
                 )

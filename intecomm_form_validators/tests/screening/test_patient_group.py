@@ -6,7 +6,7 @@ from edc_constants.constants import COMPLETE, NO, YES
 
 from intecomm_form_validators.screening import PatientGroupFormValidator as Base
 
-from ..mock_models import PatientGroupMockModel
+from ..mock_models import PatientGroupMockModel, ScreeningRefusalReasonsMockModel
 from ..test_case_mixin import TestCaseMixin
 
 
@@ -323,3 +323,33 @@ class PatientGroupTests(TestCaseMixin):
             form_validator.validate()
         except forms.ValidationError:
             self.fail("ValidationError unexpectedly raised")
+
+    def test_review_patients_in_group_patient_unwilling_to_screen_raises(self):
+        patients = self.get_mock_patients(
+            dm=10, htn=0, hiv=4, stable=YES, screen=True, consent=True
+        )
+        patient_group = PatientGroupMockModel()
+        patients[1].screening_refusal_reason = MockSet(
+            ScreeningRefusalReasonsMockModel(name="need_to_think_about_it")
+        )
+        patients[1].save()
+        patients[5].screening_refusal_reason = MockSet(
+            ScreeningRefusalReasonsMockModel(name="need_to_think_about_it")
+        )
+        patients[5].save()
+
+        form_validator = self.get_form_validator_cls()(
+            cleaned_data={
+                "status": COMPLETE,
+                "randomize_now": NO,
+                "patients": MockSet(*patients),
+            },
+            instance=patient_group,
+            model=PatientGroupMockModel,
+        )
+        with self.assertRaises(forms.ValidationError) as cm:
+            form_validator.validate()
+        self.assertIn(
+            "Patient reported as unwilling to screen. ",
+            "|".join(cm.exception.messages),
+        )
