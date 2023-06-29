@@ -4,6 +4,9 @@ from edc_crf.utils import raise_if_crf_does_not_exist
 from edc_dx_review.utils import raise_if_clinical_review_does_not_exist
 from edc_form_validators import FormValidator
 
+# TODO: Remove NHIF and CHF from insurance Q for uganda
+# TODO: if patient is HoH, skip this form
+
 
 class HealthEconomicsPatientFormValidator(
     CrfFormValidatorMixin,

@@ -149,3 +149,38 @@ class HtnTreatmentsMockModel(MockModel):
         kwargs["mock_name"] = "HtnTreatments"
         super().__init__(*args, **kwargs)
         self._meta.label_lower = "intecomm_lists.htntreatments"
+
+
+class HealthEconomicsHouseholdHeadMockModel(MockModel):
+    def __init__(self, *args, **kwargs):
+        kwargs["mock_name"] = "HealthEconomicsHouseholdHead"
+        super().__init__(*args, **kwargs)
+        self._meta.label_lower = "intecomm_subject.healtheconomicshouseholdhead"
+
+
+class HealthEconomicsPatientMockModel(MockModel):
+    def __init__(self, *args, **kwargs):
+        kwargs["mock_name"] = "HealthEconomicsPatient"
+        super().__init__(*args, **kwargs)
+        self._meta.label_lower = "intecomm_subject.healtheconomicspatient"
+
+
+class HealthEconomicsPropertyMockModel(MockModel):
+    def __init__(self, *args, **kwargs):
+        kwargs["mock_name"] = "HealthEconomicsProperty"
+        super().__init__(*args, **kwargs)
+        self._meta.label_lower = "intecomm_subject.healtheconomicsproperty"
+
+
+class HealthEconomicsAssetsMockModel(MockModel):
+    def __init__(self, *args, **kwargs):
+        kwargs["mock_name"] = "HealthEconomicsAssets"
+        super().__init__(*args, **kwargs)
+        self._meta.label_lower = "intecomm_subject.healtheconomicsassets"
+
+
+class HealthEconomicsIncomeMockModel(MockModel):
+    def __init__(self, *args, **kwargs):
+        kwargs["mock_name"] = "HealthEconomicsIncome"
+        super().__init__(*args, **kwargs)
+        self._meta.label_lower = "intecomm_subject.healtheconomicsincome"

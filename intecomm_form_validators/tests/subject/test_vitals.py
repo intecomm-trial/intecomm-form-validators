@@ -55,8 +55,18 @@ class VitalsFormValidationTests(TestCaseMixin):
         self.mock_is_baseline.return_value = False
         self.mock_is_end_of_study.return_value = True
 
-    def get_cleaned_data(self) -> dict:
+    def get_cleaned_data(
+        self, visit_code: str = None, visit_code_sequence: int = None
+    ) -> dict:
+        visit_code = visit_code or "1000"
+        visit_code_sequence = visit_code_sequence or 0
         cleaned_data = dict(
+            subject_visit=self.get_subject_visit(
+                visit_code=visit_code,
+                visit_code_sequence=visit_code_sequence,
+                timepoint=0 if visit_code == "1000" else "1",
+                schedule_name="schedule",
+            ),
             weight_determination=MEASURED,
             weight=60.0,
             height=182.88,
@@ -78,7 +88,7 @@ class VitalsFormValidationTests(TestCaseMixin):
 
     def test_cleaned_data_at_baseline_ok(self):
         self.set_baseline()
-        cleaned_data = self.get_cleaned_data()
+        cleaned_data = self.get_cleaned_data("1000", 0)
         form_validator = VitalsFormValidator(cleaned_data=cleaned_data, model=VitalsMockModel)
         try:
             form_validator.validate()
@@ -87,7 +97,7 @@ class VitalsFormValidationTests(TestCaseMixin):
 
     def test_cleaned_data_after_baseline_ok(self):
         self.set_midpoint()
-        cleaned_data = self.get_cleaned_data()
+        cleaned_data = self.get_cleaned_data("1010", 0)
         form_validator = VitalsFormValidator(cleaned_data=cleaned_data, model=VitalsMockModel)
         try:
             form_validator.validate()
@@ -96,7 +106,7 @@ class VitalsFormValidationTests(TestCaseMixin):
 
     def test_cleaned_data_at_end_of_study_ok(self):
         self.set_end_of_study()
-        cleaned_data = self.get_cleaned_data()
+        cleaned_data = self.get_cleaned_data("1120", 0)
         form_validator = VitalsFormValidator(cleaned_data=cleaned_data, model=VitalsMockModel)
         try:
             form_validator.validate()
@@ -107,7 +117,7 @@ class VitalsFormValidationTests(TestCaseMixin):
         self.set_baseline()
         for weight_determination in [ESTIMATED, NOT_APPLICABLE]:
             with self.subTest(weight_determination=weight_determination):
-                cleaned_data = self.get_cleaned_data()
+                cleaned_data = self.get_cleaned_data("1000", 0)
                 cleaned_data.update(
                     {
                         "weight_determination": weight_determination,
@@ -129,7 +139,7 @@ class VitalsFormValidationTests(TestCaseMixin):
         self.set_end_of_study()
         for weight_determination in [ESTIMATED, NOT_APPLICABLE]:
             with self.subTest(weight_determination=weight_determination):
-                cleaned_data = self.get_cleaned_data()
+                cleaned_data = self.get_cleaned_data("1120", 0)
                 cleaned_data.update(
                     {
                         "weight_determination": weight_determination,
@@ -151,7 +161,7 @@ class VitalsFormValidationTests(TestCaseMixin):
         self.set_midpoint()
         for weight_determination in [ESTIMATED, NOT_APPLICABLE]:
             with self.subTest(weight_determination=weight_determination):
-                cleaned_data = self.get_cleaned_data()
+                cleaned_data = self.get_cleaned_data("1010", 0)
                 cleaned_data.update(
                     {
                         "weight_determination": weight_determination,
@@ -168,7 +178,7 @@ class VitalsFormValidationTests(TestCaseMixin):
 
     def test_missing_weight_at_baseline_raises(self):
         self.set_baseline()
-        cleaned_data = self.get_cleaned_data()
+        cleaned_data = self.get_cleaned_data("1000", 0)
         cleaned_data.update(
             {
                 "weight_determination": MEASURED,
@@ -186,7 +196,7 @@ class VitalsFormValidationTests(TestCaseMixin):
 
     def test_missing_weight_after_baseline_ok(self):
         self.set_midpoint()
-        cleaned_data = self.get_cleaned_data()
+        cleaned_data = self.get_cleaned_data("1010", 0)
         cleaned_data.update(
             {
                 "weight_determination": NOT_APPLICABLE,
@@ -201,7 +211,7 @@ class VitalsFormValidationTests(TestCaseMixin):
 
     def test_weight_estimated_after_baseline_ok(self):
         self.set_midpoint()
-        cleaned_data = self.get_cleaned_data()
+        cleaned_data = self.get_cleaned_data("1010", 0)
         cleaned_data.update(
             {
                 "weight_determination": ESTIMATED,
@@ -216,7 +226,7 @@ class VitalsFormValidationTests(TestCaseMixin):
 
     def test_missing_weight_at_end_of_study_raises(self):
         self.set_end_of_study()
-        cleaned_data = self.get_cleaned_data()
+        cleaned_data = self.get_cleaned_data("1120", 0)
         cleaned_data.update(
             {
                 "weight_determination": MEASURED,
@@ -234,7 +244,7 @@ class VitalsFormValidationTests(TestCaseMixin):
 
     def test_missing_height_at_baseline_raises(self):
         self.set_baseline()
-        cleaned_data = self.get_cleaned_data()
+        cleaned_data = self.get_cleaned_data("1000", 0)
         cleaned_data.update({"height": None})
         form_validator = VitalsFormValidator(cleaned_data=cleaned_data, model=VitalsMockModel)
         with self.assertRaises(ValidationError) as cm:
@@ -247,7 +257,7 @@ class VitalsFormValidationTests(TestCaseMixin):
 
     def test_missing_height_after_baseline_ok(self):
         self.set_midpoint()
-        cleaned_data = self.get_cleaned_data()
+        cleaned_data = self.get_cleaned_data("1010", 0)
         cleaned_data.update({"height": None})
         form_validator = VitalsFormValidator(cleaned_data=cleaned_data, model=VitalsMockModel)
         try:
@@ -257,7 +267,7 @@ class VitalsFormValidationTests(TestCaseMixin):
 
     def test_missing_height_at_end_of_study_ok(self):
         self.set_end_of_study()
-        cleaned_data = self.get_cleaned_data()
+        cleaned_data = self.get_cleaned_data("1120", 0)
         cleaned_data.update({"height": None})
         form_validator = VitalsFormValidator(cleaned_data=cleaned_data, model=VitalsMockModel)
         try:
@@ -270,7 +280,7 @@ class VitalsFormValidationTests(TestCaseMixin):
         for reading in ["one", "two"]:
             for sys_bp, dia_bp in [(80, 120), (90, 100), (99, 100)]:
                 with self.subTest(reading=reading, sys_bp=sys_bp, dia_bp=dia_bp):
-                    cleaned_data = self.get_cleaned_data()
+                    cleaned_data = self.get_cleaned_data("1000", 0)
                     cleaned_data.update(
                         {
                             f"sys_blood_pressure_{reading}": sys_bp,
@@ -301,7 +311,7 @@ class VitalsFormValidationTests(TestCaseMixin):
             (120, 300),
         ]:
             with self.subTest(reading_one=reading_one, reading_two=reading_two):
-                cleaned_data = self.get_cleaned_data()
+                cleaned_data = self.get_cleaned_data("1000", 0)
                 cleaned_data.update(
                     {
                         "sys_blood_pressure_one": reading_one,
@@ -341,7 +351,7 @@ class VitalsFormValidationTests(TestCaseMixin):
             (81, 179),
         ]:
             with self.subTest(reading_one=reading_one, reading_two=reading_two):
-                cleaned_data = self.get_cleaned_data()
+                cleaned_data = self.get_cleaned_data("1000", 0)
                 cleaned_data.update(
                     {
                         "sys_blood_pressure_one": 180,
@@ -382,7 +392,7 @@ class VitalsFormValidationTests(TestCaseMixin):
             (120, 111),
         ]:
             with self.subTest(sys_bp=sys_bp, dia_bp=dia_bp):
-                cleaned_data = self.get_cleaned_data()
+                cleaned_data = self.get_cleaned_data("1000", 0)
                 cleaned_data.update(
                     {
                         "bp_one_taken": YES,
@@ -419,7 +429,7 @@ class VitalsFormValidationTests(TestCaseMixin):
     def test_severe_htn_applicable_if_bp_taken(self):
         for severe_htn in [YES, NO]:
             with self.subTest(severe_htn=severe_htn):
-                cleaned_data = self.get_cleaned_data()
+                cleaned_data = self.get_cleaned_data("1000", 0)
                 cleaned_data.update(
                     {
                         "bp_one_taken": YES,
@@ -455,7 +465,7 @@ class VitalsFormValidationTests(TestCaseMixin):
     def test_severe_htn_not_applicable_if_bp_not_taken(self):
         for severe_htn in [YES, NO]:
             with self.subTest(severe_htn=severe_htn):
-                cleaned_data = self.get_cleaned_data()
+                cleaned_data = self.get_cleaned_data("1000", 0)
                 cleaned_data.update(
                     {
                         "bp_one_taken": NO,
