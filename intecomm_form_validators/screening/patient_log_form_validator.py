@@ -1,5 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
-from edc_constants.constants import YES
+from edc_constants.constants import NO, YES
 from edc_form_validators import FormValidator
 from edc_form_validators.base_form_validator import INVALID_ERROR
 from edc_screening.utils import get_subject_screening_model_cls
@@ -90,6 +90,9 @@ class PatientLogFormValidator(FormValidator):
         )
         self.required_if(
             YES, field="second_health_talk", field_required="second_health_talk_date"
+        )
+        self.applicable_if(
+            NO, field="willing_to_screen", field_applicable="screening_refusal_reason"
         )
         self.validate_other_specify(
             field="screening_refusal_reason",
