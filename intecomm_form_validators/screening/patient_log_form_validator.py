@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from django.core.exceptions import ObjectDoesNotExist
 from edc_constants.constants import NO, YES
 from edc_form_validators import FormValidator
@@ -53,7 +55,7 @@ class PatientLogFormValidator(FormValidator):
                 "Patient has already screened. Heath Facility Identifier may not change",
                 INVALID_CHANGE_ALREADY_SCREENED,
             )
-
+        # TODO: cannot change willing_to_screen if screened
         self.validate_age()
 
         if (
@@ -98,27 +100,6 @@ class PatientLogFormValidator(FormValidator):
             field="screening_refusal_reason",
             other_specify_field="screening_refusal_reason_other",
         )
-        # self.validate_group_changes()
-
-    # def validate_group_changes(self):
-    #     if from_group := self.instance.patient_group:
-    #         to_group = self.cleaned_data.get("patient_group")
-    #         if not to_group:
-    #             if from_group.status == COMPLETE:
-    #                 self.raise_validation_error(
-    #                     "Cannot remove from current group. Group is complete.", INVALID_GROUP
-    #                 )
-    #         elif to_group:
-    #             if from_group.name == to_group.name:
-    #                 pass
-    #             elif from_group.status == COMPLETE:
-    #                 self.raise_validation_error(
-    #                     "Cannot remove from current group. Group is complete.", INVALID_GROUP
-    #                 )
-    #             elif to_group.status == COMPLETE:
-    #                 self.raise_validation_error(
-    #                     "Cannot add to group. Group is complete.", INVALID_GROUP
-    #                 )
 
     @property
     def subject_screening(self):
