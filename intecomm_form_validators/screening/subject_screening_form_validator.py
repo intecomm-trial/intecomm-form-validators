@@ -1,21 +1,21 @@
 from dateutil.relativedelta import relativedelta
 from django.utils.html import format_html
-from edc_constants.constants import DM, HIV, HTN, MALE, NO, YES
+from edc_consent.utils import get_consent_for_period_or_raise
+from edc_constants.constants import DM, HIV, HTN, MALE, NO, TBD, YES
 from edc_form_validators import INVALID_ERROR, FormValidator
 from edc_model import InvalidFormat, duration_to_date
-from edc_screening.form_validator_mixins import SubjectScreeningFormValidatorMixin
 
 INVALID_DURATION_IN_CARE = "invalid_duration_in_care"
 
 
-class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormValidator):
+class SubjectScreeningFormValidator(FormValidator):
     def clean(self):
         if not self.patient_log:
             self.raise_validation_error("Select a Patient log")
-        self.validate_screening_willingness_on_patient_log()
+        self.get_consent_for_period_or_raise()
+        self.validate_willing_to_screen_on_patient_log()
         self.validate_stable_in_care_on_patient_log()
         self.validate_health_talks_on_patient_log()
-        self.get_consent_for_period_or_raise()
         self.validate_initials_against_patient_log()
         self.validate_gender_against_patient_log()
         self.validate_age_in_years_against_patient_log()
@@ -46,19 +46,32 @@ class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormVali
 
         self.validate_suitability_for_study()
 
-    def validate_screening_willingness_on_patient_log(self):
-        if self.patient_log.screening_refusal_reason:
-            errmsg = format_html(
-                "Invalid. Patient is unwilling to screen. "
-                f"See patient log for {self.patient_log_link}."
-            )
-            self.raise_validation_error(errmsg, error_code=INVALID_ERROR)
+    @property
+    def report_datetime(self):
+        return self.cleaned_data.get("report_datetime")
+
+    def get_consent_for_period_or_raise(self):
+        return get_consent_for_period_or_raise(self.report_datetime)
+
+    def validate_willing_to_screen_on_patient_log(self):
+        if self.patient_log.willing_to_screen:
+            if self.patient_log.willing_to_screen == NO:
+                errmsg = format_html(
+                    f"Invalid. Patient is unwilling to screen. See {self.patient_log_link}."
+                )
+                self.raise_validation_error(errmsg, error_code=INVALID_ERROR)
+            elif self.patient_log.willing_to_screen == TBD:
+                errmsg = format_html(
+                    "Invalid. Patient has not yet agreed to screen. "
+                    f"See {self.patient_log_link}."
+                )
+                self.raise_validation_error(errmsg, error_code=INVALID_ERROR)
 
     def validate_stable_in_care_on_patient_log(self):
         if self.patient_log.stable != YES:
             errmsg = format_html(
-                "Invalid. Patient is not known to be stable and in-care. "
-                f"See patient log for {self.patient_log_link}."
+                "Invalid. Patient is NOT known to be stable and in-care. "
+                f"See {self.patient_log_link}."
             )
             self.raise_validation_error(errmsg, error_code=INVALID_ERROR)
 
@@ -66,17 +79,13 @@ class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormVali
         if self.patient_log.first_health_talk not in [YES, NO]:
             errmsg = format_html(
                 "Invalid. Has patient attended the first health talk? "
-                f"See patient log for {self.patient_log_link}."
+                f"See {self.patient_log_link}."
             )
             self.raise_validation_error(errmsg, error_code=INVALID_ERROR)
         elif self.patient_log.second_health_talk not in [YES, NO]:
-            link = (
-                f'<a href="{self.patient_log.get_changelist_url()}?'
-                f'q={str(self.patient_log.id)}">{self.patient_log}</a>'
-            )
             errmsg = format_html(
                 "Invalid. Has patient attended the second health talk? "
-                f"See patient log for {link}."
+                f"See {self.patient_log_link}."
             )
             self.raise_validation_error(errmsg, error_code=INVALID_ERROR)
         return True
@@ -85,9 +94,9 @@ class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormVali
         if self.cleaned_data.get("gender") != self.patient_log.gender:
             self.raise_validation_error(
                 {
-                    "gender": (
+                    "gender": format_html(
                         f"Invalid. Expected {self.patient_log.get_gender_display()}. "
-                        f"See patient log for {self.patient_log_link}."
+                        f"See {self.patient_log_link}."
                     )
                 },
                 INVALID_ERROR,
@@ -99,9 +108,9 @@ class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormVali
         if self.cleaned_data.get("age_in_years") != self.patient_log.age_in_years:
             self.raise_validation_error(
                 {
-                    "age_in_years": (
+                    "age_in_years": format_html(
                         f"Invalid. Expected {self.patient_log.age_in_years}. "
-                        "See Patient Log."
+                        f"See {self.patient_log_link}."
                     )
                 },
                 INVALID_ERROR,
@@ -113,8 +122,9 @@ class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormVali
         if self.cleaned_data.get("initials") != self.patient_log.initials:
             self.raise_validation_error(
                 {
-                    "initials": (
-                        f"Invalid. Expected {self.patient_log.initials}. See Patient Log."
+                    "initials": format_html(
+                        f"Invalid. Expected {self.patient_log.initials}. "
+                        f"See {self.patient_log_link}."
                     )
                 },
                 INVALID_ERROR,
@@ -164,17 +174,20 @@ class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormVali
         conditions = self.patient_log.conditions
         if not self.patient_log.conditions:
             self.raise_validation_error(
-                "No conditions (HIV/DM/HTN) have been indicated for this patient. See "
-                "the Patient Log",
+                format_html(
+                    "No conditions (HIV/DM/HTN) have been indicated for this patient. "
+                    f"See {self.patient_log_link}."
+                ),
                 INVALID_ERROR,
             )
         else:
             if not conditions.filter(name=name) and self.cleaned_data.get(field) == YES:
                 self.raise_validation_error(
                     {
-                        field: (
+                        field: format_html(
                             f"Invalid. {name.upper()} was not indicated "
-                            "as a condition on the Patient Log"
+                            "as a condition on the Patient Log. "
+                            f"See {self.patient_log_link}."
                         ),
                     },
                     INVALID_ERROR,
@@ -182,9 +195,10 @@ class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormVali
             elif conditions.filter(name=name) and self.cleaned_data.get(field) == NO:
                 self.raise_validation_error(
                     {
-                        field: (
+                        field: format_html(
                             f"Invalid. {name.upper()} was indicated "
-                            "as a condition on the Patient Log"
+                            "as a condition on the Patient Log. "
+                            f"See {self.patient_log_link}."
                         ),
                     },
                     INVALID_ERROR,
@@ -216,5 +230,5 @@ class SubjectScreeningFormValidator(SubjectScreeningFormValidatorMixin, FormVali
     def patient_log_link(self):
         return (
             f'<a href="{self.patient_log.get_changelist_url()}?'
-            f'q={str(self.patient_log.id)}">{self.patient_log}</a>'
+            f'q={str(self.patient_log.id)}">Patient Log</a>'
         )
