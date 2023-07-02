@@ -1,7 +1,11 @@
+from __future__ import annotations
+
+from datetime import date, datetime
+
 from dateutil.relativedelta import relativedelta
-from django.utils.html import format_html
+from django.apps import apps as django_apps
 from edc_consent.utils import get_consent_for_period_or_raise
-from edc_constants.constants import DM, HIV, HTN, MALE, NO, TBD, YES
+from edc_constants.constants import MALE, NO, YES
 from edc_form_validators import INVALID_ERROR, FormValidator
 from edc_model import InvalidFormat, duration_to_date
 
@@ -10,15 +14,9 @@ INVALID_DURATION_IN_CARE = "invalid_duration_in_care"
 
 class SubjectScreeningFormValidator(FormValidator):
     def clean(self):
-        if not self.patient_log:
-            self.raise_validation_error("Select a Patient log")
+        if not self.patient_log_identifier:
+            self.raise_validation_error("Select a Patient log", error_code=INVALID_ERROR)
         self.get_consent_for_period_or_raise()
-        self.validate_willing_to_screen_on_patient_log()
-        self.validate_stable_in_care_on_patient_log()
-        self.validate_health_talks_on_patient_log()
-        self.validate_initials_against_patient_log()
-        self.validate_gender_against_patient_log()
-        self.validate_age_in_years_against_patient_log()
 
         if (
             self.cleaned_data.get("consent_ability")
@@ -53,86 +51,8 @@ class SubjectScreeningFormValidator(FormValidator):
     def get_consent_for_period_or_raise(self):
         return get_consent_for_period_or_raise(self.report_datetime)
 
-    def validate_willing_to_screen_on_patient_log(self):
-        if self.patient_log.willing_to_screen:
-            if self.patient_log.willing_to_screen == NO:
-                errmsg = format_html(
-                    f"Invalid. Patient is unwilling to screen. See {self.patient_log_link}."
-                )
-                self.raise_validation_error(errmsg, error_code=INVALID_ERROR)
-            elif self.patient_log.willing_to_screen == TBD:
-                errmsg = format_html(
-                    "Invalid. Patient has not yet agreed to screen. "
-                    f"See {self.patient_log_link}."
-                )
-                self.raise_validation_error(errmsg, error_code=INVALID_ERROR)
-
-    def validate_stable_in_care_on_patient_log(self):
-        if self.patient_log.stable != YES:
-            errmsg = format_html(
-                "Invalid. Patient is NOT known to be stable and in-care. "
-                f"See {self.patient_log_link}."
-            )
-            self.raise_validation_error(errmsg, error_code=INVALID_ERROR)
-
-    def validate_health_talks_on_patient_log(self) -> bool:
-        if self.patient_log.first_health_talk not in [YES, NO]:
-            errmsg = format_html(
-                "Invalid. Has patient attended the first health talk? "
-                f"See {self.patient_log_link}."
-            )
-            self.raise_validation_error(errmsg, error_code=INVALID_ERROR)
-        elif self.patient_log.second_health_talk not in [YES, NO]:
-            errmsg = format_html(
-                "Invalid. Has patient attended the second health talk? "
-                f"See {self.patient_log_link}."
-            )
-            self.raise_validation_error(errmsg, error_code=INVALID_ERROR)
-        return True
-
-    def validate_gender_against_patient_log(self):
-        if self.cleaned_data.get("gender") != self.patient_log.gender:
-            self.raise_validation_error(
-                {
-                    "gender": format_html(
-                        f"Invalid. Expected {self.patient_log.get_gender_display()}. "
-                        f"See {self.patient_log_link}."
-                    )
-                },
-                INVALID_ERROR,
-            )
-
-        pass
-
-    def validate_age_in_years_against_patient_log(self):
-        if self.cleaned_data.get("age_in_years") != self.patient_log.age_in_years:
-            self.raise_validation_error(
-                {
-                    "age_in_years": format_html(
-                        f"Invalid. Expected {self.patient_log.age_in_years}. "
-                        f"See {self.patient_log_link}."
-                    )
-                },
-                INVALID_ERROR,
-            )
-
-        pass
-
-    def validate_initials_against_patient_log(self):
-        if self.cleaned_data.get("initials") != self.patient_log.initials:
-            self.raise_validation_error(
-                {
-                    "initials": format_html(
-                        f"Invalid. Expected {self.patient_log.initials}. "
-                        f"See {self.patient_log_link}."
-                    )
-                },
-                INVALID_ERROR,
-            )
-
-        pass
-
     def duration_in_care_is_6m_or_more_or_raise(self, fieldname: str = None) -> None:
+        dt: date | datetime | None = None
         fieldname = fieldname or "in_care_duration"
         in_care_duration = self.cleaned_data.get(fieldname)
         report_datetime = self.cleaned_data.get("report_datetime")
@@ -148,7 +68,6 @@ class SubjectScreeningFormValidator(FormValidator):
                 )
 
     def validate_hiv_section(self):
-        self.validate_condition(HIV, "hiv_dx")
         self.applicable_if(YES, field="hiv_dx", field_applicable="hiv_dx_6m")
         self.required_if(YES, field="hiv_dx_6m", field_required="hiv_dx_ago")
         self.duration_in_care_is_6m_or_more_or_raise("hiv_dx_ago")
@@ -157,52 +76,16 @@ class SubjectScreeningFormValidator(FormValidator):
         self.applicable_if(YES, field="hiv_dx", field_applicable="art_adherent")
 
     def validate_dm_section(self):
-        self.validate_condition(DM, "dm_dx")
         self.applicable_if(YES, field="dm_dx", field_applicable="dm_dx_6m")
         self.required_if(YES, field="dm_dx_6m", field_required="dm_dx_ago")
         self.duration_in_care_is_6m_or_more_or_raise("dm_dx_ago")
         self.applicable_if(YES, field="dm_dx", field_applicable="dm_complications")
 
     def validate_htn_section(self):
-        self.validate_condition(HTN, "htn_dx")
         self.applicable_if(YES, field="htn_dx", field_applicable="htn_dx_6m")
         self.required_if(YES, field="htn_dx_6m", field_required="htn_dx_ago")
         self.duration_in_care_is_6m_or_more_or_raise("htn_dx_ago")
         self.applicable_if(YES, field="htn_dx", field_applicable="htn_complications")
-
-    def validate_condition(self, name, field):
-        conditions = self.patient_log.conditions
-        if not self.patient_log.conditions:
-            self.raise_validation_error(
-                format_html(
-                    "No conditions (HIV/DM/HTN) have been indicated for this patient. "
-                    f"See {self.patient_log_link}."
-                ),
-                INVALID_ERROR,
-            )
-        else:
-            if not conditions.filter(name=name) and self.cleaned_data.get(field) == YES:
-                self.raise_validation_error(
-                    {
-                        field: format_html(
-                            f"Invalid. {name.upper()} was not indicated "
-                            "as a condition on the Patient Log. "
-                            f"See {self.patient_log_link}."
-                        ),
-                    },
-                    INVALID_ERROR,
-                )
-            elif conditions.filter(name=name) and self.cleaned_data.get(field) == NO:
-                self.raise_validation_error(
-                    {
-                        field: format_html(
-                            f"Invalid. {name.upper()} was indicated "
-                            "as a condition on the Patient Log. "
-                            f"See {self.patient_log_link}."
-                        ),
-                    },
-                    INVALID_ERROR,
-                )
 
     def validate_suitability_for_study(self):
         self.required_if(
@@ -221,14 +104,12 @@ class SubjectScreeningFormValidator(FormValidator):
             )
 
     @property
-    def patient_log(self):
-        if patient_log := self.cleaned_data.get("patient_log"):
-            return patient_log
-        return self.instance.patient_log
+    def patient_log_identifier(self):
+        return (
+            self.cleaned_data.get("patient_log_identifier")
+            or self.instance.patient_log_identifier
+        )
 
     @property
-    def patient_log_link(self):
-        return (
-            f'<a href="{self.patient_log.get_changelist_url()}?'
-            f'q={str(self.patient_log.id)}">Patient Log</a>'
-        )
+    def patient_log_model_cls(self):
+        return django_apps.get_model("intecomm_screening.patientlog")

@@ -1,7 +1,7 @@
 from django import forms
-from django.test import TestCase
+from django.test import TestCase, tag
 from django_mock_queries.query import MockModel, MockSet
-from edc_constants.constants import DM, FEMALE, MALE, NO, NOT_APPLICABLE, TBD, YES
+from edc_constants.constants import DM, MALE, NO, NOT_APPLICABLE, YES
 from edc_utils import get_utcnow
 
 from intecomm_form_validators.screening import SubjectScreeningFormValidator as Base
@@ -41,6 +41,7 @@ class SubjectScreeningTests(TestCase):
     def patient_log(**kwargs):
         """Default is stable not screened"""
         opts = dict(
+            patient_log_identifier="PXPXPXP",
             name="THING ONE",
             gender=MALE,
             stable=YES,
@@ -63,7 +64,6 @@ class SubjectScreeningTests(TestCase):
     def get_cleaned_data(self):
         return dict(
             gender=MALE,
-            patient_log=self.patient_log(gender=MALE),
             consent_ability=YES,
             in_care_6m=YES,
             in_care_duration="5y",
@@ -74,7 +74,9 @@ class SubjectScreeningTests(TestCase):
         )
 
     def test_cleaned_data_ok(self):
+        patient_log = self.patient_log()
         cleaned_data = self.get_cleaned_data()
+        cleaned_data.update({"patient_log_identifier": patient_log.patient_log_identifier})
         form_validator = SubjectScreeningFormValidator(
             cleaned_data=cleaned_data,
             instance=SubjectScreeningMockModel(),
@@ -85,90 +87,12 @@ class SubjectScreeningTests(TestCase):
         except forms.ValidationError as e:
             self.fail(f"ValidationError unexpectedly raised. Got {e}")
 
-    def test_unwilling_to_screen_in_patient_log_raises(self):
-        form_validator = SubjectScreeningFormValidator(
-            cleaned_data=dict(
-                patient_log=self.patient_log(
-                    screening_refusal_reason="dont_have_time",
-                    gender=FEMALE,
-                    willing_to_screen=NO,
-                ),
-                gender=FEMALE,
-            ),
-            instance=SubjectScreeningMockModel(gender=FEMALE),
-            model=SubjectScreeningMockModel,
-        )
-        with self.assertRaises(forms.ValidationError) as cm:
-            form_validator.validate()
-        self.assertIn("Patient is unwilling to screen", str(cm.exception))
-
-        form_validator = SubjectScreeningFormValidator(
-            cleaned_data=dict(
-                patient_log=self.patient_log(
-                    gender=FEMALE,
-                    willing_to_screen=YES,
-                ),
-            ),
-            instance=SubjectScreeningMockModel(),
-            model=SubjectScreeningMockModel,
-        )
-        with self.assertRaises(forms.ValidationError) as cm:
-            form_validator.validate()
-        self.assertNotIn("Patient is unwilling to screen", str(cm.exception))
-
-    def test_gender(self):
-        form_validator = SubjectScreeningFormValidator(
-            cleaned_data={"gender": MALE, "patient_log": self.patient_log(gender=FEMALE)},
-            instance=SubjectScreeningMockModel(),
-            model=SubjectScreeningMockModel,
-        )
-        with self.assertRaises(forms.ValidationError) as cm:
-            form_validator.validate()
-        self.assertIn("Invalid. Expected FEMALE", "|".join(cm.exception.messages))
-
-    def test_gender_not_matching(self):
-        form_validator = SubjectScreeningFormValidator(
-            cleaned_data={"gender": MALE, "patient_log": self.patient_log(gender=FEMALE)},
-            instance=SubjectScreeningMockModel(),
-            model=SubjectScreeningMockModel,
-        )
-        with self.assertRaises(forms.ValidationError) as cm:
-            form_validator.validate()
-        self.assertIn("Invalid. Expected FEMALE", "|".join(cm.exception.messages))
-
-    def test_initials(self):
-        form_validator = SubjectScreeningFormValidator(
-            cleaned_data={
-                "initials": "MM",
-                "gender": MALE,
-                "patient_log": self.patient_log(gender=MALE, initials="MM"),
-            },
-            instance=SubjectScreeningMockModel(),
-            model=SubjectScreeningMockModel,
-        )
-        try:
-            form_validator.validate()
-        except forms.ValidationError as e:
-            self.fail(f"ValidationError unexpectedly raised. Got {e}")
-
-    def test_initials_not_matching(self):
-        form_validator = SubjectScreeningFormValidator(
-            cleaned_data={
-                "initials": "MM",
-                "patient_log": self.patient_log(gender=FEMALE, initials="AA"),
-            },
-            instance=SubjectScreeningMockModel(),
-            model=SubjectScreeningMockModel,
-        )
-        with self.assertRaises(forms.ValidationError) as cm:
-            form_validator.validate()
-        self.assertIn("Invalid. Expected AA", "|".join(cm.exception.messages))
-
     def test_consent_ability(self):
+        patient_log = self.patient_log()
         form_validator = SubjectScreeningFormValidator(
             cleaned_data={
+                "patient_log_identifier": patient_log.patient_log_identifier,
                 "gender": MALE,
-                "patient_log": self.patient_log(gender=MALE),
                 "consent_ability": NO,
             },
             instance=SubjectScreeningMockModel(),
@@ -182,11 +106,12 @@ class SubjectScreeningTests(TestCase):
         )
 
     def test_in_care_duration(self):
+        patient_log = self.patient_log()
         form_validator = SubjectScreeningFormValidator(
             cleaned_data={
+                "patient_log_identifier": patient_log.patient_log_identifier,
                 "report_datetime": get_utcnow(),
                 "gender": MALE,
-                "patient_log": self.patient_log(gender=MALE),
                 "consent_ability": YES,
                 "in_care_6m": YES,
                 "in_care_duration": "1d",
@@ -205,11 +130,12 @@ class SubjectScreeningTests(TestCase):
         )
 
     def test_in_care_duration_format(self):
+        patient_log = self.patient_log()
         form_validator = SubjectScreeningFormValidator(
             cleaned_data={
+                "patient_log_identifier": patient_log.patient_log_identifier,
                 "report_datetime": get_utcnow(),
                 "gender": MALE,
-                "patient_log": self.patient_log(gender=MALE),
                 "consent_ability": YES,
                 "in_care_6m": YES,
                 "in_care_duration": "ERIK",
@@ -227,71 +153,13 @@ class SubjectScreeningTests(TestCase):
             "|".join(cm.exception.messages),
         )
 
-    def test_no_conditions_in_patient_log(self):
-        form_validator = SubjectScreeningFormValidator(
-            cleaned_data={
-                "gender": MALE,
-                "patient_log": self.patient_log(gender=MALE, conditions=[]),
-                "consent_ability": YES,
-                "in_care_6m": YES,
-                "in_care_duration": "5y",
-                "hiv_dx": YES,
-            },
-            instance=SubjectScreeningMockModel(),
-            model=SubjectScreeningMockModel,
-        )
-        with self.assertRaises(forms.ValidationError) as cm:
-            form_validator.validate()
-        self.assertIn(
-            "No conditions (HIV/DM/HTN) have been indicated for this patient",
-            "|".join(cm.exception.messages),
-        )
-
-    def test_conditions_not_matching_patient_log(self):
-        form_validator = SubjectScreeningFormValidator(
-            cleaned_data={
-                "gender": MALE,
-                "patient_log": self.patient_log(gender=MALE),
-                "consent_ability": YES,
-                "in_care_6m": YES,
-                "in_care_duration": "5y",
-                "hiv_dx": YES,
-            },
-            instance=SubjectScreeningMockModel(),
-            model=SubjectScreeningMockModel,
-        )
-        with self.assertRaises(forms.ValidationError) as cm:
-            form_validator.validate()
-        self.assertIn(
-            "Invalid. HIV was not indicated as a condition on the Patient Log",
-            "|".join(cm.exception.messages),
-        )
-
-    def test_conditions_matching_patient_log(self):
-        form_validator = SubjectScreeningFormValidator(
-            cleaned_data={
-                "gender": MALE,
-                "patient_log": self.patient_log(gender=MALE),
-                "consent_ability": YES,
-                "in_care_6m": YES,
-                "in_care_duration": "5y",
-                "hiv_dx": NO,
-                "dm_dx": YES,
-                "htn_dx": NO,
-            },
-            instance=SubjectScreeningMockModel(),
-            model=SubjectScreeningMockModel,
-        )
-        try:
-            form_validator.validate()
-        except forms.ValidationError:
-            self.fail("ValidationError unexpectedly raised")
-
+    @tag("1")
     def test_conditions_durations(self):
+        patient_log = self.patient_log()
         cleaned_data = {
+            "patient_log_identifier": patient_log.patient_log_identifier,
             "report_datetime": get_utcnow(),
             "gender": MALE,
-            "patient_log": self.patient_log(gender=MALE),
             "consent_ability": YES,
             "in_care_6m": YES,
             "in_care_duration": "5y",
@@ -336,33 +204,13 @@ class SubjectScreeningTests(TestCase):
         except forms.ValidationError:
             self.fail("ValidationError unexpectedly raised")
 
-    def test_conditions_not_matching_patient_log2(self):
-        form_validator = SubjectScreeningFormValidator(
-            cleaned_data={
-                "gender": MALE,
-                "patient_log": self.patient_log(gender=MALE),
-                "consent_ability": YES,
-                "in_care_6m": YES,
-                "in_care_duration": "5y",
-                "dm_dx": NO,
-            },
-            instance=SubjectScreeningMockModel(),
-            model=SubjectScreeningMockModel,
-        )
-        with self.assertRaises(forms.ValidationError) as cm:
-            form_validator.validate()
-        self.assertIn(
-            "Invalid. DM was indicated as a condition on the Patient Log",
-            "|".join(cm.exception.messages),
-        )
-
-    def test_eligibility(self):
-        pass
-
+    @tag("1")
     def test_reasons_unsuitable_required_if_unsuitable_for_study_yes(self):
+        patient_log = self.patient_log()
         cleaned_data = self.get_cleaned_data()
         cleaned_data.update(
             {
+                "patient_log_identifier": patient_log.patient_log_identifier,
                 "unsuitable_for_study": YES,
                 "reasons_unsuitable": "",
             }
@@ -380,11 +228,14 @@ class SubjectScreeningTests(TestCase):
             str(cm.exception.error_dict.get("reasons_unsuitable")),
         )
 
+    @tag("1")
     def test_reasons_unsuitable_not_required_if_unsuitable_for_study_not_yes(self):
+        patient_log = self.patient_log()
         with self.subTest():
             cleaned_data = self.get_cleaned_data()
             cleaned_data.update(
                 {
+                    "patient_log_identifier": patient_log.patient_log_identifier,
                     "unsuitable_for_study": NO,
                     "reasons_unsuitable": "Some reason ....",
                 }
@@ -402,10 +253,13 @@ class SubjectScreeningTests(TestCase):
                 str(cm.exception.error_dict.get("reasons_unsuitable")),
             )
 
+    @tag("1")
     def test_unsuitable_agreed_applicable_if_unsuitable_for_study_yes(self):
+        patient_log = self.patient_log()
         cleaned_data = self.get_cleaned_data()
         cleaned_data.update(
             {
+                "patient_log_identifier": patient_log.patient_log_identifier,
                 "unsuitable_for_study": YES,
                 "reasons_unsuitable": "Some reason",
                 "unsuitable_agreed": NOT_APPLICABLE,
@@ -424,12 +278,15 @@ class SubjectScreeningTests(TestCase):
             str(cm.exception.error_dict.get("unsuitable_agreed")),
         )
 
+    @tag("1")
     def test_unsuitable_agreed_not_applicable_if_unsuitable_for_study_no(self):
+        patient_log = self.patient_log()
         for agreed_answ in [YES, NO]:
             with self.subTest(unsuitable_agreed=agreed_answ):
                 cleaned_data = self.get_cleaned_data()
                 cleaned_data.update(
                     {
+                        "patient_log_identifier": patient_log.patient_log_identifier,
                         "unsuitable_for_study": NO,
                         "reasons_unsuitable": "",
                         "unsuitable_agreed": agreed_answ,
@@ -448,10 +305,13 @@ class SubjectScreeningTests(TestCase):
                     str(cm.exception.error_dict.get("unsuitable_agreed")),
                 )
 
+    @tag("1")
     def test_unsuitable_agreed_no_raises_if_unsuitable_for_study_yes(self):
+        patient_log = self.patient_log()
         cleaned_data = self.get_cleaned_data()
         cleaned_data.update(
             {
+                "patient_log_identifier": patient_log.patient_log_identifier,
                 "unsuitable_for_study": YES,
                 "reasons_unsuitable": "Reason unsuitable",
                 "unsuitable_agreed": NO,
@@ -473,54 +333,18 @@ class SubjectScreeningTests(TestCase):
             str(cm.exception.error_dict.get("unsuitable_agreed")),
         )
 
+    @tag("1")
     def test_unsuitable_agreed_yes_with_unsuitable_for_study_yes_ok(self):
+        patient_log = self.patient_log()
         cleaned_data = self.get_cleaned_data()
         cleaned_data.update(
             {
+                "patient_log_identifier": patient_log.patient_log_identifier,
                 "unsuitable_for_study": YES,
                 "reasons_unsuitable": "Reason unsuitable",
                 "unsuitable_agreed": YES,
             }
         )
-        form_validator = SubjectScreeningFormValidator(
-            cleaned_data=cleaned_data,
-            instance=SubjectScreeningMockModel(),
-            model=SubjectScreeningMockModel,
-        )
-        try:
-            form_validator.validate()
-        except forms.ValidationError as e:
-            self.fail(f"ValidationError unexpectedly raised. Got {e}")
-
-    def test_first_health_talk_reponse_from_patientlog(self):
-        cleaned_data = self.get_cleaned_data()
-        cleaned_data["patient_log"].first_health_talk = TBD
-        form_validator = SubjectScreeningFormValidator(
-            cleaned_data=cleaned_data,
-            instance=SubjectScreeningMockModel(),
-            model=SubjectScreeningMockModel,
-        )
-        with self.assertRaises(forms.ValidationError) as cm:
-            form_validator.validate()
-        self.assertIn("Has patient attended the first health talk", str(cm.exception))
-
-    def test_second_health_talk_reponse_from_patientlog(self):
-        cleaned_data = self.get_cleaned_data()
-        cleaned_data["patient_log"].first_health_talk = NO
-        cleaned_data["patient_log"].second_health_talk = TBD
-        form_validator = SubjectScreeningFormValidator(
-            cleaned_data=cleaned_data,
-            instance=SubjectScreeningMockModel(),
-            model=SubjectScreeningMockModel,
-        )
-        with self.assertRaises(forms.ValidationError) as cm:
-            form_validator.validate()
-        self.assertIn("Has patient attended the second health talk", str(cm.exception))
-
-    def test_health_talk_reponse_from_patientlog(self):
-        cleaned_data = self.get_cleaned_data()
-        cleaned_data["patient_log"].first_health_talk = NO
-        cleaned_data["patient_log"].second_health_talk = NO
         form_validator = SubjectScreeningFormValidator(
             cleaned_data=cleaned_data,
             instance=SubjectScreeningMockModel(),
