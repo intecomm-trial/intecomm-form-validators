@@ -1,7 +1,5 @@
 from edc_constants.constants import MONTHLY, WEEKLY, YEARLY, YES
 from edc_crf.crf_form_validator_mixins import CrfFormValidatorMixin
-from edc_crf.utils import raise_if_crf_does_not_exist
-from edc_dx_review.utils import raise_if_clinical_review_does_not_exist
 from edc_form_validators import FormValidator
 
 
@@ -10,24 +8,6 @@ class HealthEconomicsIncomeFormValidator(
     FormValidator,
 ):
     def clean(self):
-        raise_if_clinical_review_does_not_exist(self.cleaned_data.get("subject_visit"))
-        raise_if_crf_does_not_exist(
-            self.cleaned_data.get("subject_visit"),
-            model="intecomm_subject.healtheconomicshouseholdhead",
-        )
-        raise_if_crf_does_not_exist(
-            self.cleaned_data.get("subject_visit"),
-            model="intecomm_subject.healtheconomicspatient",
-        )
-        raise_if_crf_does_not_exist(
-            self.cleaned_data.get("subject_visit"),
-            model="intecomm_subject.healtheconomicsassets",
-        )
-        raise_if_crf_does_not_exist(
-            self.cleaned_data.get("subject_visit"),
-            model="intecomm_subject.healtheconomicsproperty",
-        )
-
         for fld in [
             "wages",
             "selling",

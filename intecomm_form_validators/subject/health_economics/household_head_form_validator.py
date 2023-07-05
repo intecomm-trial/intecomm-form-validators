@@ -10,7 +10,6 @@ class HealthEconomicsHouseholdHeadFormValidator(
 ):
     def clean(self):
         raise_if_clinical_review_does_not_exist(self.cleaned_data.get("subject_visit"))
-
         self.applicable_if(NO, field="hoh", field_applicable="relationship_to_hoh")
         self.validate_other_specify(field="relationship_to_hoh")
         self.validate_other_specify(field="hoh_religion")
