@@ -3,7 +3,7 @@ from unittest.mock import patch
 from dateutil.relativedelta import relativedelta
 from django import forms
 from django_mock_queries.query import MockModel, MockSet
-from edc_constants.constants import FEMALE, MALE, OTHER
+from edc_constants.constants import FEMALE, MALE, OTHER, YES
 from edc_utils import get_utcnow
 
 from intecomm_form_validators.screening import PatientLogFormValidator as Base
@@ -72,7 +72,7 @@ class PatientLogTests(TestCaseMixin):
             self.fail("ValidationError unexpectedly raised")
 
     def test_patient_log_matches_screening(self):
-        patient_log = PatientLogMockModel(name="ERIK")
+        patient_log = PatientLogMockModel(name="ERIK", willing_to_screen=YES)
         patient_group = PatientGroupMockModel(
             name="PARKSIDE", patients=MockSet(patient_log), randomized=None
         )
@@ -129,6 +129,7 @@ class PatientLogTests(TestCaseMixin):
                 )
                 cleaned_data = dict(
                     name="ERIK",
+                    willing_to_screen=YES,
                     report_datetime=get_utcnow(),
                     patient_group=patient_group,
                     **{log_fld: log_value},

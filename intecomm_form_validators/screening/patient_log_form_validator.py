@@ -55,7 +55,7 @@ class PatientLogFormValidator(FormValidator):
                 "Patient has already screened. Heath Facility Identifier may not change",
                 INVALID_CHANGE_ALREADY_SCREENED,
             )
-        # TODO: cannot change willing_to_screen if screened
+
         self.validate_age()
 
         if (
@@ -93,6 +93,13 @@ class PatientLogFormValidator(FormValidator):
         self.required_if(
             YES, field="second_health_talk", field_required="second_health_talk_date"
         )
+
+        if self.subject_screening and self.cleaned_data.get("willing_to_screen") != YES:
+            self.raise_validation_error(
+                {"willing_to_screen": "Patient has already screened. Expected YES."},
+                INVALID_ERROR,
+            )
+
         self.applicable_if(
             NO, field="willing_to_screen", field_applicable="screening_refusal_reason"
         )
