@@ -1,7 +1,8 @@
-from dateutil.relativedelta import relativedelta
 from edc_crf.crf_form_validator import CrfFormValidator
 from edc_dx_review.utils import raise_if_clinical_review_does_not_exist
 from edc_form_validators import INVALID_ERROR
+
+from ..utils import get_max_rdelta_to_next_appointment
 
 
 class NextAppointmentFormValidator(CrfFormValidator):
@@ -26,9 +27,12 @@ class NextAppointmentFormValidator(CrfFormValidator):
 
         if self.cleaned_data.get("report_datetime") and self.cleaned_data.get("appt_date"):
             report_date = self.cleaned_data.get("report_datetime").date()
-            if self.cleaned_data.get("appt_date") > report_date + relativedelta(months=6):
+            if (
+                self.cleaned_data.get("appt_date")
+                > report_date + get_max_rdelta_to_next_appointment()
+            ):
                 raise self.raise_validation_error(
-                    {"appt_date": "Cannot be more than 6 months from report date"},
+                    {"appt_date": "Cannot be more than 7 months from report date"},
                     INVALID_ERROR,
                 )
         self.validate_date_is_on_clinic_day()

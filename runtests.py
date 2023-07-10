@@ -83,6 +83,7 @@ DEFAULT_SETTINGS = dict(  # nosec B106
     USE_TZ=True,
     STATIC_URL="/static/",
     DEFAULT_AUTO_FIELD="django.db.models.BigAutoField",
+    INTECOMM_MAX_MONTHS_TO_NEXT_APPT=7,
 )
 
 
