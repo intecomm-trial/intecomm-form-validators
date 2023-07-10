@@ -3,6 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Tuple
 
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.db.models import QuerySet
 from django.utils.html import format_html
@@ -173,3 +174,8 @@ def confirm_patients_stable_and_screened_and_consented_or_raise(
             if not patient_log.subject_identifier:
                 errmsg = format_html(f"Patient has not consented. See {link}.")
                 raise PatientNotConsentedError(errmsg)
+
+
+def get_max_rdelta_to_next_appointment():
+    max_months = settings.INTECOMM_MAX_MONTHS_TO_NEXT_APPT
+    return relativedelta(months=max_months)

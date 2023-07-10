@@ -1,5 +1,5 @@
 from django import forms
-from django.test import TestCase, tag
+from django.test import TestCase
 from django_mock_queries.query import MockModel, MockSet
 from edc_constants.constants import DM, MALE, NO, NOT_APPLICABLE, YES
 from edc_utils import get_utcnow
@@ -153,7 +153,6 @@ class SubjectScreeningTests(TestCase):
             "|".join(cm.exception.messages),
         )
 
-    @tag("1")
     def test_conditions_durations(self):
         patient_log = self.patient_log()
         cleaned_data = {
@@ -204,7 +203,6 @@ class SubjectScreeningTests(TestCase):
         except forms.ValidationError:
             self.fail("ValidationError unexpectedly raised")
 
-    @tag("1")
     def test_reasons_unsuitable_required_if_unsuitable_for_study_yes(self):
         patient_log = self.patient_log()
         cleaned_data = self.get_cleaned_data()
@@ -228,7 +226,6 @@ class SubjectScreeningTests(TestCase):
             str(cm.exception.error_dict.get("reasons_unsuitable")),
         )
 
-    @tag("1")
     def test_reasons_unsuitable_not_required_if_unsuitable_for_study_not_yes(self):
         patient_log = self.patient_log()
         with self.subTest():
@@ -253,7 +250,6 @@ class SubjectScreeningTests(TestCase):
                 str(cm.exception.error_dict.get("reasons_unsuitable")),
             )
 
-    @tag("1")
     def test_unsuitable_agreed_applicable_if_unsuitable_for_study_yes(self):
         patient_log = self.patient_log()
         cleaned_data = self.get_cleaned_data()
@@ -278,7 +274,6 @@ class SubjectScreeningTests(TestCase):
             str(cm.exception.error_dict.get("unsuitable_agreed")),
         )
 
-    @tag("1")
     def test_unsuitable_agreed_not_applicable_if_unsuitable_for_study_no(self):
         patient_log = self.patient_log()
         for agreed_answ in [YES, NO]:
@@ -305,7 +300,6 @@ class SubjectScreeningTests(TestCase):
                     str(cm.exception.error_dict.get("unsuitable_agreed")),
                 )
 
-    @tag("1")
     def test_unsuitable_agreed_no_raises_if_unsuitable_for_study_yes(self):
         patient_log = self.patient_log()
         cleaned_data = self.get_cleaned_data()
@@ -333,7 +327,6 @@ class SubjectScreeningTests(TestCase):
             str(cm.exception.error_dict.get("unsuitable_agreed")),
         )
 
-    @tag("1")
     def test_unsuitable_agreed_yes_with_unsuitable_for_study_yes_ok(self):
         patient_log = self.patient_log()
         cleaned_data = self.get_cleaned_data()
