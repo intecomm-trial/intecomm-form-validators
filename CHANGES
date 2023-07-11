@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.1.30
+------
+- HivReview: validate rx_init date fields
+- HtnReview: remove BP fields/checks
+
 0.1.25
 ------
 - fix Hypertension Initial Review form incorrectly flagging medicine start date
