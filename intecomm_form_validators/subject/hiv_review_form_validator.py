@@ -8,7 +8,7 @@ from edc_dx_review.utils import (
     get_review_model_cls,
     raise_if_clinical_review_does_not_exist,
 )
-from edc_form_validators import FormValidator
+from edc_form_validators import INVALID_ERROR, FormValidator
 
 
 class HivReviewFormValidator(CrfFormValidatorMixin, FormValidator):
@@ -20,9 +20,7 @@ class HivReviewFormValidator(CrfFormValidatorMixin, FormValidator):
             applicable_msg="Subject was NOT previously reported as on ART.",
             not_applicable_msg="Subject was previously reported as on ART.",
         )
-        self.required_if(
-            YES, field="arv_initiated", field_required="arv_initiation_actual_date"
-        )
+        self.validate_rx_init_dates()
 
     def is_rx_initiated(self) -> bool:
         """Return True if already initiated"""
@@ -33,6 +31,8 @@ class HivReviewFormValidator(CrfFormValidatorMixin, FormValidator):
                 rx_init=YES,
             )
         except ObjectDoesNotExist:
+            if self.instance.id:
+                exclude = {"id": self.instance.id}
             rx_initiated = (
                 get_review_model_cls(HIV)
                 .objects.filter(
@@ -40,8 +40,36 @@ class HivReviewFormValidator(CrfFormValidatorMixin, FormValidator):
                     report_datetime__lte=self.report_datetime,
                     rx_init=YES,
                 )
+                .exclude(**exclude)
                 .exists()
             )
         else:
             rx_initiated = True
         return rx_initiated
+
+    def validate_rx_init_dates(self):
+        rx_init = self.cleaned_data.get("rx_init")
+        rx_init_date = self.cleaned_data.get("rx_init_date")
+        rx_init_ago = self.cleaned_data.get("rx_init_ago")
+        if rx_init and rx_init == YES:
+            if rx_init_date and rx_init_ago:
+                self.raise_validation_error(
+                    {"rx_init_ago": "This field is not required"}, INVALID_ERROR
+                )
+            elif not rx_init_date and not rx_init_ago:
+                self.raise_validation_error(
+                    {"rx_init_date": "This field is required"}, INVALID_ERROR
+                )
+            elif not rx_init_date and rx_init_ago:
+                pass
+            elif rx_init_date and not rx_init_ago:
+                pass
+        elif rx_init and rx_init != YES:
+            if rx_init_date:
+                self.raise_validation_error(
+                    {"rx_init_date": "This field is not required"}, INVALID_ERROR
+                )
+            if rx_init_ago:
+                self.raise_validation_error(
+                    {"rx_init_ago": "This field is not required"}, INVALID_ERROR
+                )
