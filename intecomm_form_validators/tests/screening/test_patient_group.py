@@ -329,10 +329,12 @@ class PatientGroupTests(TestCaseMixin):
             dm=10, htn=0, hiv=4, stable=YES, screen=True, consent=True
         )
         patient_group = PatientGroupMockModel()
+        patients[1].willing_to_screen = NO
         patients[1].screening_refusal_reason = MockSet(
             ScreeningRefusalReasonsMockModel(name="need_to_think_about_it")
         )
         patients[1].save()
+        patients[5].willing_to_screen = NO
         patients[5].screening_refusal_reason = MockSet(
             ScreeningRefusalReasonsMockModel(name="need_to_think_about_it")
         )
