@@ -97,15 +97,18 @@ class TestCaseMixin(TestCase):
         screen: bool | None = None,
         consent: bool | None = None,
         site: str | None = None,
+        willing_to_screen: str | None = None,
     ):
         """Returns a mock patient log"""
         # conditions = [condition] if isinstance(condition, (str,)) else condition
         stable = YES if stable else NO
+        willing_to_screen = YES if willing_to_screen is None else willing_to_screen
         screening_identifier = f"XYZ{str(i)}" if screen else None
         subject_identifier = f"999-{str(i)}" if consent else None
         return PatientLogMockModel(
             name=f"NAME-{str(i)}",
             stable=stable,
+            willing_to_screen=willing_to_screen,
             screening_identifier=screening_identifier,
             subject_identifier=subject_identifier,
             conditions=MockSet(

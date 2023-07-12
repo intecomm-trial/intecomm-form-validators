@@ -3,7 +3,7 @@ from unittest.mock import patch
 from dateutil.relativedelta import relativedelta
 from django import forms
 from django_mock_queries.query import MockModel, MockSet
-from edc_constants.constants import FEMALE, MALE, OTHER, YES
+from edc_constants.constants import FEMALE, MALE, NO, OTHER, YES
 from edc_utils import get_utcnow
 
 from intecomm_form_validators.screening import PatientLogFormValidator as Base
@@ -155,28 +155,6 @@ class PatientLogTests(TestCaseMixin):
         )
         self.assertIsNotNone(form_validator.subject_screening)
 
-    # def test_attempt_to_change_patient_in_randomized_group_raises(self):
-    #     patients = self.get_mock_patients(ratio=[10, 0, 4])
-    #     save_patients = []
-    #     for patient in patients:
-    #         patient.id = uuid4()
-    #         save_patients.append(patient)
-    #     patient_group = PatientGroupMockModel(
-    #         randomized=True, patients=MockSet(*save_patients)
-    #     )
-    #     patient_group.save()
-    #
-    #     patient_log = save_patients[0]
-    #     cleaned_data = dict(
-    #         next_appt_date=(get_utcnow() + relativedelta(days=60)).date(),
-    #     )
-    #     form_validator = self.get_form_validator_cls()(
-    #         cleaned_data=cleaned_data, instance=patient_log, model=PatientLogMockModel
-    #     )
-    #     with self.assertRaises(forms.ValidationError) as cm:
-    #         form_validator.validate()
-    #     self.assertIn("next_appt_date", cm.exception.error_dict)
-
     def test_age_in_years_lt_18_raises(self):
         for age in [17, 15, 1, 0]:
             with self.subTest(age=age):
@@ -213,6 +191,7 @@ class PatientLogTests(TestCaseMixin):
         patient_log = PatientLogMockModel()
         form_validator = self.get_form_validator_cls()(
             cleaned_data={
+                "willing_to_screen": NO,
                 "screening_refusal_reason": OTHER,
                 "screening_refusal_reason_other": "",
             },
@@ -229,6 +208,7 @@ class PatientLogTests(TestCaseMixin):
 
         form_validator = self.get_form_validator_cls()(
             cleaned_data={
+                "willing_to_screen": NO,
                 "screening_refusal_reason": OTHER,
                 "screening_refusal_reason_other": "Some other reason",
             },
@@ -242,7 +222,6 @@ class PatientLogTests(TestCaseMixin):
 
     def test_screening_refusal_reason_not_other_does_not_require_other_field(self):
         for answ in [
-            None,
             "dont_have_time",
             "must_consult_spouse",
             "dont_want_to_join",
@@ -252,6 +231,7 @@ class PatientLogTests(TestCaseMixin):
                 patient_log = PatientLogMockModel()
                 form_validator = self.get_form_validator_cls()(
                     cleaned_data={
+                        "willing_to_screen": NO,
                         "screening_refusal_reason": answ,
                         "screening_refusal_reason_other": "Some other reason",
                     },
@@ -268,6 +248,7 @@ class PatientLogTests(TestCaseMixin):
 
                 form_validator = self.get_form_validator_cls()(
                     cleaned_data={
+                        "willing_to_screen": NO,
                         "screening_refusal_reason": answ,
                         "screening_refusal_reason_other": "",
                     },
