@@ -17,7 +17,7 @@ class DrugRefillHivFormValidator(
         self.validate_modifications()
 
         try:
-            validate_total_days(self, return_in_days=self.cleaned_data.get("return_in_days"))
+            validate_total_days(self, rx_days=self.cleaned_data.get("rx_days"))
         except TotalDaysMismatch as e:
             self.raise_validation_error(
                 {
