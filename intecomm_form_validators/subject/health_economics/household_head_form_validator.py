@@ -15,6 +15,7 @@ class HealthEconomicsHouseholdHeadFormValidator(
         self.validate_other_specify(field="hoh_religion")
         self.validate_other_specify(field="hoh_ethnicity")
         self.validate_other_specify(field="hoh_education")
+        self.validate_other_specify(field="hoh_employment_type")
         self.validate_other_specify(field="hoh_marital_status")
         self.m2m_single_selection_if(DONT_KNOW, NONE, m2m_field="hoh_insurance")
         self.m2m_other_specify(
