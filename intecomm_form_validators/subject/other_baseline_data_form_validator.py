@@ -7,9 +7,7 @@ from edc_form_validators import FormValidator
 class OtherBaselineDataFormValidator(CrfFormValidatorMixin, FormValidator):
     def clean(self):
         raise_if_clinical_review_does_not_exist(self.cleaned_data.get("subject_visit"))
-        self.required_if(
-            SMOKER, field="smoking_status", field_required="smoker_current_duration"
-        )
+        self.required_if(SMOKER, field="smoking_status", field_required="smoker_duration")
         self.required_if(
             FORMER_SMOKER, field="smoking_status", field_required="smoker_quit_ago"
         )
