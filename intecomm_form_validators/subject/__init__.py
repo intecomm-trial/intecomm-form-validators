@@ -7,7 +7,10 @@ from .dm_review_form_validator import DmReviewFormValidator
 from .drug_refill_dm_form_validator import DrugRefillDmFormValidator
 from .drug_refill_hiv_form_validator import DrugRefillHivFormValidator
 from .drug_refill_htn_form_validator import DrugRefillHtnFormValidator
-from .health_economics import HealthEconomicsAssetsFormValidator
+from .health_economics import (
+    HealthEconomicsAssetsFormValidator,
+    HealthEconomicsHouseholdHeadFormValidator,
+)
 from .hiv_initial_review_form_validator import HivInitialReviewFormValidator
 from .hiv_medication_adherence_form_validator import HivMedicationAdherenceFormValidator
 from .hiv_review_form_validator import HivReviewFormValidator

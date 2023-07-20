@@ -149,3 +149,17 @@ class HtnTreatmentsMockModel(MockModel):
         kwargs["mock_name"] = "HtnTreatments"
         super().__init__(*args, **kwargs)
         self._meta.label_lower = "intecomm_lists.htntreatments"
+
+
+class HealthEconomicsHouseholdHeadMockModel(MockModel):
+    def __init__(self, *args, **kwargs):
+        kwargs["mock_name"] = "HealthEconomicsHouseholdHead"
+        super().__init__(*args, **kwargs)
+        self._meta.label_lower = "intecomm_subject.healtheconomicshouseholdhead"
+
+
+class InsuranceTypesMockModel(MockModel):
+    def __init__(self, *args, **kwargs):
+        kwargs["mock_name"] = "InsuranceTypes"
+        super().__init__(*args, **kwargs)
+        self._meta.label_lower = "intecomm_lists.insurancetypes"
