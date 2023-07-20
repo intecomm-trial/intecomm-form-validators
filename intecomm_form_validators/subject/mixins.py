@@ -37,11 +37,11 @@ class DrugRefillFormValidatorMixin(FormValidator):
         self.m2m_other_specify(
             OTHER, m2m_field="modifications", field_other="modifications_other"
         )
-        self.m2m_required_if(YES, field="rx_modified", m2m_field="modification_reasons")
+        self.m2m_required_if(YES, field="rx_modified", m2m_field="modifications_reason")
         self.m2m_other_specify(
             OTHER,
-            m2m_field="modification_reasons",
-            field_other="modification_reasons_other",
+            m2m_field="modifications_reason",
+            field_other="modifications_reason_other",
         )
 
 
