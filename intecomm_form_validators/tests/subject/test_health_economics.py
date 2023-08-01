@@ -3,7 +3,6 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from django import forms
-from django.test import tag
 from django_mock_queries.query import MockSet
 from edc_constants.constants import COMPLETE, FEMALE, NO, NOT_APPLICABLE, OTHER, YES
 from edc_he.constants import WIFE_HUSBAND
@@ -64,7 +63,6 @@ class HealthEconomicsHouseholdHeadTests(TestCaseMixin):
         cleaned_data.update(**kwargs)
         return cleaned_data
 
-    @tag("1")
     def test_cleaned_data_ok(self):
         instance = HealthEconomicsHouseholdHeadMockModel()
         cleaned_data = self.get_cleaned_data()
@@ -78,7 +76,6 @@ class HealthEconomicsHouseholdHeadTests(TestCaseMixin):
         except forms.ValidationError as e:
             self.fail(f"ValidationError unexpectedly raised. Got {e}")
 
-    @tag("1")
     def test_relationship_to_hoh_applicable_if_not_hoh(self):
         instance = HealthEconomicsHouseholdHeadMockModel()
         opts = dict(
@@ -142,7 +139,6 @@ class HealthEconomicsHouseholdHeadTests(TestCaseMixin):
         except forms.ValidationError as e:
             self.fail(f"ValidationError unexpectedly raised. Got {e}")
 
-    @tag("1")
     def test_hoh_religion_other(self):
         instance = HealthEconomicsHouseholdHeadMockModel()
         opts = dict(
