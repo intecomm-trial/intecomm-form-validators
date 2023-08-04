@@ -36,14 +36,13 @@ exclude_lines = [
 legacy_tox_ini = """
 [tox]
 envlist =
-    py{310,311}-dj{41,42,dev},
+    py{311}-dj{41,42,dev},
     lint
 
 isolated_build = true
 
 [gh-actions]
 python =
-    3.10: py310
     3.11: py311, lint
 
 [gh-actions:env]
