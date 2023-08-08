@@ -1,6 +1,13 @@
 from django_mock_queries.query import MockModel
 
 
+class SiteMockModel(MockModel):
+    def __init__(self, *args, **kwargs):
+        kwargs["mock_name"] = "Site"
+        super().__init__(*args, **kwargs)
+        self._meta.label_lower = "sites.site"
+
+
 class SubjectScreeningMockModel(MockModel):
     def __init__(self, *args, **kwargs):
         kwargs["mock_name"] = "SubjectScreening"

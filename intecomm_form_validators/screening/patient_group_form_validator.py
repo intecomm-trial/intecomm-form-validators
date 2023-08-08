@@ -4,12 +4,14 @@ from edc_form_validators import FormValidator
 
 from ..constants import RECRUITING
 from ..utils import (
+    PatientGroupMakeupError,
     PatientGroupRatioError,
     PatientGroupSizeError,
     PatientNotConsentedError,
     PatientNotScreenedError,
     PatientNotStableError,
     PatientUnwillingToScreenError,
+    confirm_patient_group_minimum_of_each_condition_or_raise,
     confirm_patient_group_size_or_raise,
     confirm_patients_stable_and_screened_and_consented_or_raise,
     get_group_size_for_ratio,
@@ -21,6 +23,7 @@ INVALID_PATIENT_COUNT = "INVALID_PATIENT_COUNT"
 INVALID_PATIENT = "INVALID_PATIENT"
 INVALID_CONDITION_RATIO = "INVALID_CONDITION_RATIO"
 INVALID_STATUS = "INVALID_STATUS"
+INVALID_PATIENT_MAKEUP = "INVALID_PATIENT_MAKEUP"
 
 
 class PatientGroupFormValidator(FormValidator):
@@ -33,33 +36,11 @@ class PatientGroupFormValidator(FormValidator):
         ]:
             self.raise_validation_error({"status": "Invalid selection"}, INVALID_STATUS)
 
-        # if (
-        #     self.cleaned_data.get("status") != COMPLETE
-        #     and self.cleaned_data.get("randomize_now") == YES
-        # ):
-        #     self.raise_validation_error(
-        #         {"randomize_now": "Invalid. Group is not complete"}, INVALID_RANDOMIZE
-        #     )
-
-        # if (
-        #     self.cleaned_data.get("status") == COMPLETE
-        #     and self.instance.status != COMPLETE
-        #     and self.cleaned_data.get("randomize_now") == YES
-        # ):
-        #     self.raise_validation_error(
-        #         {
-        #             "randomize_now": (
-        #                 "First set to NO and set status to complete/ready and save. "
-        #                 "Reopen and try again with YES."
-        #             )
-        #         },
-        #         INVALID_RANDOMIZE,
-        #     )
-
         if self.cleaned_data.get("status") == COMPLETE:
             self.confirm_patients_stable_and_screened_and_consented_or_raise()
             self.confirm_patient_group_size_or_raise()
             self.verify_patient_group_ratio_raise()
+            self.confirm_patient_group_minimum_of_each_condition_or_raise()
 
     def block_changes_if_already_randomized(self):
         if self.instance.randomized:
@@ -106,3 +87,10 @@ class PatientGroupFormValidator(FormValidator):
                 self.raise_validation_error(
                     {"__all__": format_html(f"{e} {errmsg}")}, INVALID_CONDITION_RATIO
                 )
+
+    def confirm_patient_group_minimum_of_each_condition_or_raise(self):
+        patients = self.cleaned_data.get("patients") or self.instance.patients
+        try:
+            confirm_patient_group_minimum_of_each_condition_or_raise(patients)
+        except PatientGroupMakeupError as e:
+            self.raise_validation_error({"__all__": str(e)}, INVALID_PATIENT_MAKEUP)

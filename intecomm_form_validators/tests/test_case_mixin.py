@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+from uuid import uuid4
+
+from django.conf import settings
 from django.test import TestCase
 from django_mock_queries.query import MockSet
 from edc_constants.constants import DM, HIV, HTN, NO, YES
+from faker import Faker
 
 from .mock_models import (
     AppointmentMockModel,
@@ -10,6 +14,8 @@ from .mock_models import (
     PatientLogMockModel,
     SubjectVisitMockModel,
 )
+
+fake = Faker()
 
 
 class TestCaseMixin(TestCase):
@@ -103,10 +109,21 @@ class TestCaseMixin(TestCase):
         # conditions = [condition] if isinstance(condition, (str,)) else condition
         stable = YES if stable else NO
         willing_to_screen = YES if willing_to_screen is None else willing_to_screen
-        screening_identifier = f"XYZ{str(i)}" if screen else None
-        subject_identifier = f"999-{str(i)}" if consent else None
+        index = f"{i}"
+        index = index.zfill(5)
+        screening_identifier = f"XYZ{index}" if screen else str(uuid4())
+        index = f"{i}"
+        index = index.zfill(2)
+        subject_identifier = (
+            f"{settings.SITE_ID}-{settings.SITE_ID}-00{index}-2" if consent else str(uuid4())
+        )
+        first_name = fake.first_name()
+        last_name = fake.last_name()
+        initials = f"{first_name[0]}{i}{last_name[0]}"
         return PatientLogMockModel(
-            name=f"NAME-{str(i)}",
+            legal_name=f"{first_name} {last_name}",
+            familiar_name=f"{first_name} {last_name}",
+            initials=initials,
             stable=stable,
             willing_to_screen=willing_to_screen,
             screening_identifier=screening_identifier,

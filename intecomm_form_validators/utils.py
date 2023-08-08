@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from decimal import Decimal
 from typing import Tuple
 
@@ -7,6 +8,7 @@ from django.conf import settings
 from django.db.models import QuerySet
 from django.utils.html import format_html
 from edc_constants.constants import DM, HIV, HTN, YES
+from edc_protocol import Protocol
 from edc_utils.round_up import round_up
 from edc_visit_schedule.constants import MONTH12
 
@@ -167,9 +169,11 @@ def confirm_patients_stable_and_screened_and_consented_or_raise(
             if patient_log.willing_to_screen != YES:
                 errmsg = format_html(f"Patient reported as unwilling to screen. See {link}.")
                 raise PatientUnwillingToScreenError(errmsg)
-            if not patient_log.screening_identifier:
+            if not re.match(r"^[A-Z0-9]{8}$", patient_log.screening_identifier):
                 errmsg = format_html(f"Patient has not screened for eligibility. See {link}.")
                 raise PatientNotScreenedError(errmsg)
-            if not patient_log.subject_identifier:
+            if not re.match(
+                Protocol().subject_identifier_pattern, patient_log.subject_identifier
+            ):
                 errmsg = format_html(f"Patient has not consented. See {link}.")
                 raise PatientNotConsentedError(errmsg)
