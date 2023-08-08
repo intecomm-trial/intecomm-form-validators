@@ -5,8 +5,10 @@ import sys
 from pathlib import Path
 
 import django
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.test.runner import DiscoverRunner
+from edc_utils import get_utcnow
 
 app_name = "intecomm_form_validators"
 base_dir = Path(__file__).resolve().parent.parent
@@ -15,8 +17,12 @@ DEFAULT_SETTINGS = dict(  # nosec B106
     BASE_DIR=Path(__file__).resolve().parent.parent,
     SECRET_KEY="django-insecure",  # nosec B106
     DEBUG=True,
+    SITE_ID=101,
+    EDC_PROTOCOL_NUMBER="101",
     SUBJECT_CONSENT_MODEL=None,
     SUBJECT_SCREENING_MODEL=None,
+    EDC_PROTOCOL_STUDY_OPEN_DATETIME=get_utcnow() - relativedelta(years=1),
+    EDC_PROTOCOL_STUDY_CLOSE_DATETIME=get_utcnow() + relativedelta(years=1),
     EDC_DX_LABELS=dict(hiv="HIV", dm="Diabetes", htn="Hypertension"),
     ALLOWED_HOSTS=[],
     INSTALLED_APPS=[
