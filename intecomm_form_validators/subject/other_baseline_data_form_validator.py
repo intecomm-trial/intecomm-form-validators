@@ -11,14 +11,10 @@ class OtherBaselineDataFormValidator(CrfFormValidatorMixin, FormValidator):
         self.required_if(
             FORMER_SMOKER, field="smoking_status", field_required="smoker_quit_ago"
         )
-        # self.estimated_date_from_ago("smoker_quit_ago")
-
         self.applicable_if(YES, field="alcohol", field_applicable="alcohol_consumption")
-
         self.required_if(
             YES, field="activity_work", field_required="activity_work_days_per_wk"
         )
-
         self.validate_other_specify(
             field="employment_status", other_specify_field="employment_status_other"
         )

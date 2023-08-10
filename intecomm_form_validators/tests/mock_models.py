@@ -137,6 +137,13 @@ class HivInitialReviewMockModel(MockModel):
         self._meta.label_lower = "intecomm_subject.hivinitialreview"
 
 
+class HivReviewMockModel(MockModel):
+    def __init__(self, *args, **kwargs):
+        kwargs["mock_name"] = "HivReview"
+        super().__init__(*args, **kwargs)
+        self._meta.label_lower = "intecomm_subject.hivreview"
+
+
 class HtnInitialReviewMockModel(MockModel):
     def __init__(self, *args, **kwargs):
         kwargs["mock_name"] = "HtnInitialReview"
