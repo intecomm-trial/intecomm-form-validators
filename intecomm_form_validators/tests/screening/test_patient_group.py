@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from django import forms
-from django.test import tag
 from django_mock_queries.query import MockSet
 from edc_constants.constants import COMPLETE, NO, YES
 
@@ -137,7 +136,6 @@ class PatientGroupTests(TestCaseMixin):
             "Patient is not known to be stable and in-care", "|".join(cm.exception.messages)
         )
 
-    @tag("1")
     def test_review_patients_in_group_all_stable(self):
         patients = self.get_mock_patients(dm=10, htn=0, hiv=4, stable=YES)
         patient_group = PatientGroupMockModel(randomized=False, patients=MockSet(*patients))

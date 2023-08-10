@@ -16,28 +16,26 @@ class DmInitialReviewFormValidator(
         raise_if_clinical_review_does_not_exist(self.cleaned_data.get("subject_visit"))
 
         try:
-            dx_date = DxDate(
-                self.cleaned_data,
-            )
+            dx_date = DxDate(self.cleaned_data)
         except MedicalDateError as e:
             self.raise_validation_error(e.message_dict, e.code)
-
-        if DRUGS in self.get_m2m_selected("managed_by") or INSULIN in self.get_m2m_selected(
-            "managed_by"
-        ):
-            try:
-                RxDate(self.cleaned_data, reference_date=dx_date)
-            except MedicalDateError as e:
-                self.raise_validation_error(e.message_dict, e.code)
         else:
-            if self.cleaned_data.get("rx_init_date"):
-                self.raise_validation_error(
-                    {"rx_init_date": "This field is not required"}, INVALID_ERROR
-                )
-            if self.cleaned_data.get("rx_init_ago"):
-                self.raise_validation_error(
-                    {"rx_init_ago": "This field is not required"}, INVALID_ERROR
-                )
+            if DRUGS in self.get_m2m_selected(
+                "managed_by"
+            ) or INSULIN in self.get_m2m_selected("managed_by"):
+                try:
+                    RxDate(self.cleaned_data, reference_date=dx_date)
+                except MedicalDateError as e:
+                    self.raise_validation_error(e.message_dict, e.code)
+            else:
+                if self.cleaned_data.get("rx_init_date"):
+                    self.raise_validation_error(
+                        {"rx_init_date": "This field is not required"}, INVALID_ERROR
+                    )
+                if self.cleaned_data.get("rx_init_ago"):
+                    self.raise_validation_error(
+                        {"rx_init_ago": "This field is not required"}, INVALID_ERROR
+                    )
 
         self.m2m_other_specify(m2m_field="managed_by", field_other="managed_by_other")
 
