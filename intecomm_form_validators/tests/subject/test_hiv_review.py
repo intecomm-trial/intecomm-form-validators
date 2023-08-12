@@ -56,7 +56,6 @@ class HivReviewTests(TestCaseMixin):
         cleaned_data.update(**kwargs)
         return cleaned_data
 
-    # @tag("1")
     # def test_cleaned_data_ok(self):
     #     self.mock_raise_missing_clinical_review.return_value = False
     #     self.mock_get_initial_review_model_cls.return_value = HivInitialReviewMockModel()()
