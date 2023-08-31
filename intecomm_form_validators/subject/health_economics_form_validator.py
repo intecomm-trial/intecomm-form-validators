@@ -1,5 +1,6 @@
 from django import forms
 from django.apps import apps as django_apps
+from django.utils.translation import gettext_lazy as _
 from edc_constants.constants import (
     FREE_OF_CHARGE,
     INSURANCE,
@@ -46,14 +47,10 @@ class HealthEconomicsFormValidator(
         )
 
         if cond and self.cleaned_data.get("education_in_years") > self.age_in_years:
-            raise forms.ValidationError(
-                {
-                    "education_in_years": (
-                        "Cannot exceed subject's age. "
-                        f"Got subject is {self.age_in_years} years old."
-                    )
-                }
-            )
+            msg = _(
+                "Cannot exceed subject's age. Got subject is %(age_in_years)s years old."
+            ) % {"age_in_years": self.age_in_years}
+            raise forms.ValidationError({"education_in_years": msg})
 
         self.required_if_true(cond, field_required="education_certificate")
 
