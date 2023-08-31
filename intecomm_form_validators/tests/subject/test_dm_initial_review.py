@@ -291,10 +291,10 @@ class InitialReviewTests(TestCaseMixin):
                     self.fail("ValidationError unexpectedly raised")
 
         for rdelta in [
-            relativedelta(years=-1),
+            relativedelta(years=-2),
             relativedelta(months=-7),
             relativedelta(months=2),
-            relativedelta(months=1),
+            relativedelta(months=3),
         ]:
             cleaned_data.update(glucose_date=get_utcnow() + rdelta)
             with self.subTest(rdelta=rdelta):
