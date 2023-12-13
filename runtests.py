@@ -1,19 +1,15 @@
 #!/usr/bin/env python
 import logging
-import os.path
-import sys
 from pathlib import Path
 
-import django
 from dateutil.relativedelta import relativedelta
-from django.conf import settings
-from django.test.runner import DiscoverRunner
+from edc_test_utils import func_main
 from edc_utils import get_utcnow
 
 app_name = "intecomm_form_validators"
 base_dir = Path(__file__).resolve().parent.parent
 
-DEFAULT_SETTINGS = dict(  # nosec B106
+project_settings = dict(  # nosec B106
     BASE_DIR=Path(__file__).resolve().parent.parent,
     SECRET_KEY="django-insecure",  # nosec B106
     DEBUG=True,
@@ -65,7 +61,7 @@ DEFAULT_SETTINGS = dict(  # nosec B106
     DATABASES={
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": os.path.join(base_dir, "db.sqlite3"),
+            "NAME": str(base_dir / "db.sqlite3"),
         }
     },
     AUTH_PASSWORD_VALIDATORS=[
@@ -94,13 +90,7 @@ DEFAULT_SETTINGS = dict(  # nosec B106
 
 
 def main():
-    if not settings.configured:
-        settings.configure(**DEFAULT_SETTINGS)
-    django.setup()
-    tags = [t.split("=")[1] for t in sys.argv if t.startswith("--tag")]
-    failfast = True if [t for t in sys.argv if t == "--failfast"] else False
-    failures = DiscoverRunner(failfast=failfast, tags=tags).run_tests([])
-    sys.exit(bool(failures))
+    func_main(project_settings, f"{app_name}.tests")
 
 
 if __name__ == "__main__":
