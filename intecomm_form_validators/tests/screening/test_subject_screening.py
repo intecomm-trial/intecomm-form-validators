@@ -32,7 +32,7 @@ class PatientLogMockModel(MockModel):
 
 
 class SubjectScreeningFormValidator(Base):
-    def get_consent_for_period_or_raise(self):
+    def get_consent_definition_or_raise(self):
         return None
 
 
