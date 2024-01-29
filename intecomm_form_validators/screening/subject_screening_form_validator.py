@@ -4,7 +4,6 @@ from datetime import date, datetime
 
 from dateutil.relativedelta import relativedelta
 from django.apps import apps as django_apps
-from edc_consent.utils import get_consent_definition_or_raise
 from edc_constants.constants import MALE, NO, YES
 from edc_form_validators import INVALID_ERROR, FormValidator
 from edc_model import InvalidFormat, duration_to_date
@@ -16,8 +15,6 @@ class SubjectScreeningFormValidator(FormValidator):
     def clean(self):
         if not self.patient_log_identifier:
             self.raise_validation_error("Select a Patient log", error_code=INVALID_ERROR)
-        self.get_consent_definition_or_raise()
-
         if (
             self.cleaned_data.get("consent_ability")
             and self.cleaned_data.get("consent_ability") == NO
@@ -47,11 +44,6 @@ class SubjectScreeningFormValidator(FormValidator):
     @property
     def report_datetime(self):
         return self.cleaned_data.get("report_datetime")
-
-    def get_consent_definition_or_raise(self):
-        return get_consent_definition_or_raise(
-            self.report_datetime, site_id=self.instance.site.id
-        )
 
     def duration_in_care_is_6m_or_more_or_raise(self, fieldname: str = None) -> None:
         dt: date | datetime | None = None
