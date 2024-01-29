@@ -8,7 +8,7 @@ from django.conf import settings
 from django.db.models import QuerySet
 from django.utils.html import format_html
 from edc_constants.constants import DM, HIV, HTN, YES
-from edc_protocol import Protocol
+from edc_protocol.research_protocol_config import ResearchProtocolConfig
 from edc_utils.round_up import round_up
 from edc_visit_schedule.constants import MONTH12
 
@@ -173,7 +173,8 @@ def confirm_patients_stable_and_screened_and_consented_or_raise(
                 errmsg = format_html(f"Patient has not screened for eligibility. See {link}.")
                 raise PatientNotScreenedError(errmsg)
             if not re.match(
-                Protocol().subject_identifier_pattern, patient_log.subject_identifier
+                ResearchProtocolConfig().subject_identifier_pattern,
+                patient_log.subject_identifier,
             ):
                 errmsg = format_html(f"Patient has not consented. See {link}.")
                 raise PatientNotConsentedError(errmsg)
