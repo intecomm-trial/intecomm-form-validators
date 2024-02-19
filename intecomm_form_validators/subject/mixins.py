@@ -5,7 +5,6 @@ from edc_visit_schedule.utils import is_baseline
 
 
 class DrugRefillFormValidatorMixin(FormValidator):
-
     """For example:
     def clean(self):
         medications_exists_or_raise(self.cleaned_data.get("subject_visit"))

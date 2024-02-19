@@ -18,8 +18,8 @@ Installation
 .. |pypi| image:: https://img.shields.io/pypi/v/intecomm-form-validators.svg
     :target: https://pypi.python.org/pypi/intecomm-form-validators
 
-.. |actions| image:: https://github.com/intecomm-trial/intecomm-form-validators/workflows/build/badge.svg?branch=develop
-  :target: https://github.com/intecomm-trial/intecomm-form-validators/actions?query=workflow:build
+.. |actions| image:: https://github.com/intecomm-trial/intecomm-form-validators/actions/workflows/build.yml/badge.svg
+  :target: https://github.com/intecomm-trial/intecomm-form-validators/actions/workflows/build.yml
 
 .. |codecov| image:: https://codecov.io/gh/intecomm-trial/intecomm-form-validators/branch/develop/graph/badge.svg
   :target: https://codecov.io/gh/intecomm-trial/intecomm-form-validators
