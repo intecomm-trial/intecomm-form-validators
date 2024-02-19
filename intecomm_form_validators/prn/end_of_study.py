@@ -15,6 +15,7 @@ from edc_prn.modelform_mixins import PrnFormValidatorMixin
 from edc_transfer.constants import TRANSFERRED
 from edc_utils import formatted_date
 from edc_visit_schedule.constants import MONTH12
+from edc_visit_schedule.exceptions import OffScheduleError
 from edc_visit_schedule.utils import off_all_schedules_or_raise
 
 
@@ -91,6 +92,8 @@ class EndOfStudyFormValidator(
                 subject_identifier=self.cleaned_data.get("subject_identifier"),
             )
         except OffstudyError as e:
+            self.raise_validation_error(str(e), INVALID_ERROR)
+        except OffScheduleError as e:
             self.raise_validation_error(str(e), INVALID_ERROR)
 
     def validate_offstudy_datetime_against_last_seen_date(self):
