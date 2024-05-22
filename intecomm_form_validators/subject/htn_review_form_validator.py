@@ -6,3 +6,4 @@ from edc_form_validators import FormValidator
 class HtnReviewFormValidator(CrfFormValidatorMixin, FormValidator):
     def clean(self):
         raise_if_clinical_review_does_not_exist(self.cleaned_data.get("subject_visit"))
+        self.m2m_other_specify(m2m_field="managed_by", field_other="managed_by_other")

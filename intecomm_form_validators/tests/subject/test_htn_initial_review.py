@@ -38,7 +38,8 @@ class HtnInitialReviewTests(TestCaseMixin):
     @staticmethod
     def get_form_validator_cls():
         class HtnInitialReviewFormValidator(HtnBase):
-            pass
+            def raise_if_clinical_review_does_not_exist(self):
+                pass
 
         return HtnInitialReviewFormValidator
 
