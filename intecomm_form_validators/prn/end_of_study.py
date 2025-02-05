@@ -116,7 +116,7 @@ class EndOfStudyFormValidator(
             transfer_model_cls = django_apps.get_model("intecomm_prn.subjecttransfer")
             try:
                 obj = transfer_model_cls.objects.get(
-                    subject_visit__subject_identifier=self.subject_identifier,
+                    subject_identifier=self.subject_identifier,
                 )
             except ObjectDoesNotExist:
                 self.raise_validation_error(
@@ -129,7 +129,7 @@ class EndOfStudyFormValidator(
                     INVALID_ERROR,
                 )
             else:
-                if obj.transfer_date.date() != self.cleaned_data.get("transfer_date"):
+                if obj.transfer_date != self.cleaned_data.get("transfer_date"):
                     dt = formatted_date(obj.transfer_date)
                     self.raise_validation_error(
                         {
