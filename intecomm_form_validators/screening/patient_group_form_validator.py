@@ -85,7 +85,8 @@ class PatientGroupFormValidator(FormValidator):
                     f"{group_name}</a>"
                 )
                 self.raise_validation_error(
-                    {"__all__": format_html(f"{e} {errmsg}")}, INVALID_CONDITION_RATIO
+                    {"__all__": format_html("{e} {errmsg}", e=e, errmsg=errmsg)},
+                    INVALID_CONDITION_RATIO,
                 )
 
     def confirm_patient_group_minimum_of_each_condition_or_raise(self):

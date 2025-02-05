@@ -157,24 +157,35 @@ def confirm_patients_stable_and_screened_and_consented_or_raise(
     else:
         for patient_log in patients.all():
             link = format_html(
-                f'<a href="{patient_log.get_changelist_url()}?'
-                f'q={str(patient_log.id)}">{patient_log}</a>'
+                '<a href="{url}?q={id}">{patient_log}</a>',
+                url=(
+                    patient_log.get_changelist_url()
+                    if patient_log.get_changelist_url()
+                    else ""
+                ),
+                id=str(patient_log.id) if patient_log.id else "",
+                patient_log=str(patient_log) if patient_log else "",
             )
             if patient_log.stable != YES:
                 errmsg = format_html(
                     "Patient is not known to be stable and in-care. "
-                    f"See patient log for {link}."
+                    "See patient log for {link}.",
+                    link=link,
                 )
                 raise PatientNotStableError(errmsg)
             if patient_log.willing_to_screen != YES:
-                errmsg = format_html(f"Patient reported as unwilling to screen. See {link}.")
+                errmsg = format_html(
+                    "Patient reported as unwilling to screen. See {link}.", link=link
+                )
                 raise PatientUnwillingToScreenError(errmsg)
             if not re.match(r"^[A-Z0-9]{8}$", patient_log.screening_identifier):
-                errmsg = format_html(f"Patient has not screened for eligibility. See {link}.")
+                errmsg = format_html(
+                    "Patient has not screened for eligibility. See {link}.", link=link
+                )
                 raise PatientNotScreenedError(errmsg)
             if not re.match(
                 ResearchProtocolConfig().subject_identifier_pattern,
                 patient_log.subject_identifier,
             ):
-                errmsg = format_html(f"Patient has not consented. See {link}.")
+                errmsg = format_html("Patient has not consented. See {link}.", link=link)
                 raise PatientNotConsentedError(errmsg)
